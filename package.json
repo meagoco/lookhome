@@ -1,0 +1,26 @@
+{
+  "name": "lukejia",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "路客家 · 轻量公寓管理系统（私有化部署）",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "init": "node server/db.js"
+  },
+  "dependencies": {
+    "basic-ftp": "^6.2.1",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.3.0",
+    "nodemailer": "^10.0.9",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "ftp-srv": "^4.6.3"
+  }
+}
