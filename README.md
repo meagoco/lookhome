@@ -51,6 +51,15 @@
 curl -fsSL https://raw.githubusercontent.com/meagoco/lookhome/main/install.sh | sudo bash
 ```
 
+> **国内 / 海外低延迟服务器加速**：若 GitHub 直连较慢，可先设置代理前缀再执行：
+>
+> ```bash
+> export LUKEJIA_GH_PROXY=https://ghproxy.com/
+> curl -fsSL https://cdn.jsdelivr.net/gh/meagoco/lookhome@main/install.sh | sudo bash
+> ```
+>
+> `LUKEJIA_GH_PROXY` 会同时作用于脚本内部的项目包下载（jsdelivr 仅代理脚本本身，包下载走代理前缀）。
+
 脚本将自动完成：
 
 1. 下载项目代码并解压
