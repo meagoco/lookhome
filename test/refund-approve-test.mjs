@@ -108,6 +108,9 @@ check('直接退款后房间自动空置', (r.j.rows || []).find(x => x.id === r
 // 已解除合同再退 → 不重复退房
 r = await req('POST', '/refunds', adminTok, { contract_id: cid2, amount: 500, remark: '再退' });
 check('已解除合同再退不重复退房', r.status === 200 && r.j.auto_ended === false, JSON.stringify(r.j));
+// 管理员退押金后，租客小程序无法再申请退押金（合同已解除）
+r = await req('POST', '/tenant/refunds/apply', tTok2, {});
+check('管理员退押金后租客无法再申请', r.status === 400, JSON.stringify(r.j));
 
 // 11. 操作员权限隔离
 r = await req('POST', '/admin-users', adminTok, { username: `oprefund${rnd}`, password: 'op123456', display_name: '退押金操作员' });
