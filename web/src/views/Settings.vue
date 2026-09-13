@@ -60,9 +60,11 @@
       <el-button type="primary" size="small" @click="saveMini">保存小程序配置</el-button>
     </el-card>
 
-    <!-- 微信支付 -->
+    <!-- 默认支付配置（全局兜底；多配置模板见「支付配置」菜单） -->
     <el-card v-if="group==='pay'" shadow="never" style="border-radius:10px;max-width:640px;">
-      <template #header><b>微信支付（租金/水电/押金）— 预留开通</b></template>
+      <template #header><b>默认支付配置（全局）— 预留开通</b></template>
+      <el-alert type="info" :closable="false" style="margin-bottom:12px;"
+        title="未在「支付配置」中绑定支付模板的项目，收款时使用本默认配置。多项目共用/分商户收款，请使用左侧菜单「支付配置」创建模板并勾选项目。" />
       <el-alert type="info" :closable="false" style="margin-bottom:12px;" :title="payEnabled ? '微信支付已配置：租客可在线支付，到账自动入账' : '未配置：当前为【手工确认收款】模式，租客缴费走线下转账后后台确认'" />
       <el-form label-width="120px" size="small">
         <el-form-item label="商户号"><el-input v-model="pay.mchid" placeholder="微信支付商户号" /></el-form-item>
@@ -334,7 +336,7 @@ const groups = [
   { key: 'site', name: '站点信息' },
   { key: 'switches', name: '功能开关' },
   { key: 'mini', name: '微信小程序' },
-  { key: 'pay', name: '微信支付' },
+  { key: 'pay', name: '默认支付配置' },
   { key: 'fees', name: '费用类型' },
   { key: 'mail', name: '邮件服务' },
   { key: 'users', name: '操作员管理' },
