@@ -72,7 +72,11 @@ async function save() {
   if (!form.contract_id || !(form.amount > 0)) return ElMessage.warning('请选择合同并输入金额');
   const data = await api.post('/refunds', form);
   dlg.value = false; load();
-  ElMessage.success(data.refund_mode === 'wechat' ? '已发起微信原路退回' : '已记录手工退款，请线下转账后在收款记录中登记');
+  if (data.refund_mode === 'wechat') {
+    ElMessage.success(data.auto_ended ? '已发起微信原路退回：合同已自动退房，房间已改为空置' : '已发起微信原路退回');
+  } else {
+    ElMessage.success(data.auto_ended ? '已记录手工退款：合同已自动退房，房间已改为空置，请线下转账后登记收款' : '已记录手工退款，请线下转账后在收款记录中登记');
+  }
 }
 
 async function approve(row) {
