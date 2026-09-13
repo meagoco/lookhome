@@ -97,9 +97,17 @@ check('驳回后房间仍已租', (r.j.rows || []).find(x => x.id === rid).statu
 r = await req('POST', `/refunds/${rfId2}/reject`, adminTok, {});
 check('驳回必填原因', r.status === 400, JSON.stringify(r.j));
 
-// 10. 后台直接退押金兼容（原功能）
+// 10. 后台直接退押金：合同在租 → 自动退房+房间空置（兼容原功能升级）
 r = await req('POST', '/refunds', adminTok, { contract_id: cid2, amount: 500, remark: '部分退' });
 check('后台直接退款兼容', r.status === 200 && r.j.refund_mode === 'manual', JSON.stringify(r.j));
+check('直接退款自动退房标记', r.j.auto_ended === true, JSON.stringify(r.j));
+r = await req('GET', '/contracts', adminTok);
+check('直接退款后合同自动 ended', r.j.find(x => x.id === cid2).status === 'ended');
+r = await req('GET', `/rooms?property_id=${pid}`, adminTok);
+check('直接退款后房间自动空置', (r.j.rows || []).find(x => x.id === rid).status === 'vacant');
+// 已解除合同再退 → 不重复退房
+r = await req('POST', '/refunds', adminTok, { contract_id: cid2, amount: 500, remark: '再退' });
+check('已解除合同再退不重复退房', r.status === 200 && r.j.auto_ended === false, JSON.stringify(r.j));
 
 // 11. 操作员权限隔离
 r = await req('POST', '/admin-users', adminTok, { username: `oprefund${rnd}`, password: 'op123456', display_name: '退押金操作员' });
@@ -118,7 +126,10 @@ r = await req('GET', '/refunds', opTok);
 check('授权后操作员可见退款', r.j.length >= 1, JSON.stringify(r.j));
 r = await req('GET', '/refunds', opTok2);
 check('未授权操作员仍不可见', r.j.length === 0);
-// 操作员审批自己授权范围内的申请
+// 操作员审批自己授权范围内的申请（先为新合同）
+r = await req('POST', '/contracts', adminTok, { tenant_id: tid2, room_id: rid, start_date: '2026-11-01', end_date: '2027-10-31', monthly_rent: 1200, deposit: 1200 });
+const cid3 = r.j.id;
+check('重建合同供操作员审批', !!cid3, JSON.stringify(r.j));
 r = await req('POST', '/tenant/refunds/apply', tTok2, {});
 check('租客2 再次申请', r.status === 200 && r.j.status === 'pending', JSON.stringify(r.j));
 const rfId3 = r.j.id;
