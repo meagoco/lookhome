@@ -11,7 +11,7 @@ function refundRoomProperty(req, contractId) {
   return room ? room.property_id : null;
 }
 
-// 后台直接退押金（全额/部分，立即完成）
+// 后台直接退押金（全额/部分，立即完成；合同在租时自动退房并置空房间）
 r.post('/', auth, (req, res) => {
   const { contract_id, amount, remark } = req.body || {};
   if (!contract_id || !(amount > 0)) return res.status(400).json({ error: '参数错误' });
@@ -22,11 +22,28 @@ r.post('/', auth, (req, res) => {
   if (Number(amount) > c.deposit) return res.status(400).json({ error: `退款不能超过押金 ${c.deposit} 元` });
   const paySetting = (db.prepare(`SELECT value FROM settings WHERE key='wechat_pay_mchid'`).get() || {}).value;
   const refundMode = paySetting ? 'wechat' : 'manual'; // 预留：配了商户号走原路退回
-  const info = db.prepare(`
-    INSERT INTO refunds (contract_id,payment_id,tenant_id,amount,refund_mode,source,status,remark,done_at)
-    VALUES (?,?,?,?,?,?,?,?,datetime('now','localtime'))`)
-    .run(contract_id, null, c.tenant_id, Number(amount), refundMode, 'admin', 'done', remark || '');
-  res.json({ id: info.lastInsertRowid, refund_mode: refundMode, notice: refundMode === 'manual' ? '已记录手工退款，请线下转账并在支付记录中登记' : '已发起微信原路退回' });
+  const willEnd = c.status === 'active';
+  let newId = null;
+  const tx = db.transaction(() => {
+    const info = db.prepare(`
+      INSERT INTO refunds (contract_id,payment_id,tenant_id,amount,refund_mode,source,status,remark,done_at)
+      VALUES (?,?,?,?,?,?,?,?,datetime('now','localtime'))`)
+      .run(contract_id, null, c.tenant_id, Number(amount), refundMode, 'admin', 'done', remark || '');
+    newId = info.lastInsertRowid;
+    if (willEnd) {
+      db.prepare(`UPDATE contracts SET status='ended', ended_at=datetime('now','localtime') WHERE id=?`).run(contract_id);
+      db.prepare(`UPDATE rooms SET status='vacant', available_date=date('now','localtime') WHERE id=?`).run(c.room_id);
+    }
+  });
+  tx();
+  res.json({
+    id: newId,
+    refund_mode: refundMode,
+    auto_ended: willEnd,
+    notice: refundMode === 'manual'
+      ? (willEnd ? '已记录手工退款：合同已自动退房，房间已改为空置，请线下转账并在支付记录中登记' : '已记录手工退款（合同已解除/作废，未重复退房），请线下转账并在支付记录中登记')
+      : (willEnd ? '已发起微信原路退回，合同已自动退房，房间已改为空置' : '已发起微信原路退回（合同已解除/作废）')
+  });
 });
 
 // 后台同意退押金：押金退后自动解除合同、房源改为空置
