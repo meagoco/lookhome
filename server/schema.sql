@@ -172,14 +172,17 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at TEXT DEFAULT (datetime('now','localtime'))
 );
 
--- 退款（押金）
+-- 退款（押金：后台直接退 / 租客小程序申请→后台手工同意）
 CREATE TABLE IF NOT EXISTS refunds (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   contract_id INTEGER REFERENCES contracts(id),
   payment_id INTEGER REFERENCES payments(id),
+  tenant_id INTEGER,
   amount REAL NOT NULL,
   refund_mode TEXT DEFAULT 'manual',
+  source TEXT DEFAULT 'admin',
   status TEXT DEFAULT 'pending',
+  apply_remark TEXT,
   remark TEXT,
   created_at TEXT DEFAULT (datetime('now','localtime')),
   done_at TEXT
