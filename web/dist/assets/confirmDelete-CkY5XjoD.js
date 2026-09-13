@@ -1,1 +1,0 @@
-import{H as t}from"./index-Bcysm6dg.js";function o(e=""){return t.prompt(`此操作不可恢复。请输入「删除」两字确认删除${e}：`,"删除确认",{confirmButtonText:"确认删除",cancelButtonText:"取消",inputPlaceholder:"请输入：删除",inputPattern:/^删除$/,inputErrorMessage:"必须输入「删除」两字才能删除",closeOnClickModal:!1}).then(({value:r})=>r!=="删除"?Promise.reject(new Error("未输入删除确认")):!0)}export{o as c};
