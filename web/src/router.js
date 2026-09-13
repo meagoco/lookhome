@@ -16,6 +16,7 @@ const routes = [
       { path: 'payments', component: () => import('./views/Payments.vue'), meta: { title: '收款记录' } },
       { path: 'refunds', component: () => import('./views/Refunds.vue'), meta: { title: '押金退款' } },
       { path: 'meterings', component: () => import('./views/Meterings.vue'), meta: { title: '抄表管理' } },
+      { path: 'pay-configs', component: () => import('./views/PayConfigs.vue'), meta: { title: '支付配置' } },
       { path: 'settings', component: () => import('./views/Settings.vue'), meta: { title: '系统设置' } }
     ]
   }
