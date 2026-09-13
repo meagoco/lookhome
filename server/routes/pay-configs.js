@@ -16,13 +16,29 @@ function clean(row) {
   return c;
 }
 
-// 范围条件：主管理员看全部；操作员仅看自己创建的配置
+// 可查看范围：主管理员全部；操作员 = 自己创建的 + 被管理员授权的
 function scopeCond(req) {
   if (req.user.role === 'admin') return { cond: '', args: [] };
-  return { cond: ' WHERE created_by=?', args: [req.user.id] };
+  return {
+    cond: ' WHERE pc.created_by=? OR pc.id IN (SELECT config_id FROM payment_config_access WHERE admin_user_id=?)',
+    args: [req.user.id, req.user.id]
+  };
 }
 
-// 配置列表（含绑定项目 id 列表）
+// 操作员是否可管理（编辑/删除）该配置：仅自己创建的
+function canManage(req, cfg) {
+  return req.user.role === 'admin' || cfg.created_by === req.user.id;
+}
+
+// 校验操作员授权 id 列表（仅主管理员可用；只允许操作员角色）
+function resolveOperators(req, ids) {
+  const list = [...new Set((ids || []).map(Number).filter((n) => n > 0))];
+  if (!list.length) return { list: [] };
+  const rows = db.prepare(`SELECT id FROM admin_users WHERE role='operator' AND status=1 AND id IN (${list.map(() => '?').join(',')})`).all(...list);
+  return { list: rows.map((x) => x.id) };
+}
+
+// 配置列表（含绑定项目、授权操作员）
 r.get('/', (req, res) => {
   const { cond, args } = scopeCond(req);
   const rows = db.prepare(`SELECT pc.*, (SELECT COALESCE(display_name, username, '') FROM admin_users au WHERE au.id=pc.created_by) created_by_name
@@ -30,8 +46,14 @@ r.get('/', (req, res) => {
   const binds = db.prepare('SELECT config_id, property_id FROM payment_config_bindings').all();
   const byCfg = {};
   for (const b of binds) (byCfg[b.config_id] ||= []).push(b.property_id);
+  const acc = db.prepare('SELECT config_id, admin_user_id FROM payment_config_access').all();
+  const byAcc = {};
+  for (const a of acc) (byAcc[a.config_id] ||= []).push(a.admin_user_id);
   for (let i = 0; i < rows.length; i++) {
     rows[i].property_ids = byCfg[rows[i].id] || [];
+    rows[i].operator_ids = byAcc[rows[i].id] || [];
+    // 操作员视角标记：自己创建 vs 被授权共享
+    if (req.user.role !== 'admin') rows[i].shared = rows[i].created_by !== req.user.id;
     rows[i] = clean(rows[i]);
   }
   res.json(rows);
@@ -52,7 +74,7 @@ function resolveProps(req, props, excludeId) {
   return { pids };
 }
 
-// 创建配置（可勾选绑定一个或多个项目）
+// 创建配置（可勾选绑定项目；主管理员可授权给操作员）
 r.post('/', (req, res) => {
   const b = req.body || {};
   if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: '配置名称必填' });
@@ -61,6 +83,7 @@ r.post('/', (req, res) => {
   if (check.error) return res.status(400).json({ error: check.error });
   const createdBy = req.user.role === 'admin' ? 0 : req.user.id;
   const scope = req.user.role === 'admin' ? 'global' : 'operator';
+  const ops = req.user.role === 'admin' ? resolveOperators(req, b.operator_ids) : { list: [] };
   const tx = db.transaction(() => {
     const info = db.prepare('INSERT INTO payment_configs (name, mchid, apiv3_key, serial_no, private_key, notify_url, appid, scope, created_by) VALUES (?,?,?,?,?,?,?,?,?)')
       .run(String(b.name).trim(), String(b.mchid).trim(),
@@ -72,6 +95,8 @@ r.post('/', (req, res) => {
         scope, createdBy);
     const ins = db.prepare('INSERT OR IGNORE INTO payment_config_bindings (config_id, property_id) VALUES (?,?)');
     for (const pid of check.pids) ins.run(info.lastInsertRowid, pid);
+    const insAcc = db.prepare('INSERT OR IGNORE INTO payment_config_access (config_id, admin_user_id) VALUES (?,?)');
+    for (const op of ops.list) insAcc.run(info.lastInsertRowid, op);
     return info.lastInsertRowid;
   });
   res.json({ id: tx() });
@@ -99,16 +124,19 @@ r.get('/effective', (req, res) => {
 r.get('/:id', (req, res) => {
   const c = db.prepare('SELECT * FROM payment_configs WHERE id=?').get(req.params.id);
   if (!c) return res.status(404).json({ error: '配置不存在' });
-  if (req.user.role !== 'admin' && c.created_by !== req.user.id) return res.status(403).json({ error: '无权查看该配置' });
+  const visible = req.user.role === 'admin' || c.created_by === req.user.id ||
+    db.prepare('SELECT COUNT(*) c FROM payment_config_access WHERE config_id=? AND admin_user_id=?').get(req.params.id, req.user.id).c > 0;
+  if (!visible) return res.status(403).json({ error: '无权查看该配置' });
   c.property_ids = db.prepare('SELECT property_id FROM payment_config_bindings WHERE config_id=?').all(req.params.id).map((x) => x.property_id);
+  c.operator_ids = db.prepare('SELECT admin_user_id FROM payment_config_access WHERE config_id=?').all(req.params.id).map((x) => x.admin_user_id);
   res.json(clean(c));
 });
 
-// 编辑配置（含绑定项目全量替换）
+// 编辑配置（含绑定项目、授权操作员全量替换）
 r.put('/:id', (req, res) => {
   const c = db.prepare('SELECT * FROM payment_configs WHERE id=?').get(req.params.id);
   if (!c) return res.status(404).json({ error: '配置不存在' });
-  if (req.user.role !== 'admin' && c.created_by !== req.user.id) return res.status(403).json({ error: '无权修改该配置' });
+  if (!canManage(req, c)) return res.status(403).json({ error: '该配置由主管理员分配，仅可查看，不可修改' });
   const b = req.body || {};
   if (b.name !== undefined && !String(b.name).trim()) return res.status(400).json({ error: '配置名称不能为空' });
   if (b.mchid !== undefined && !String(b.mchid).trim()) return res.status(400).json({ error: '商户号不能为空' });
@@ -118,6 +146,7 @@ r.put('/:id', (req, res) => {
     if (check.error) return res.status(400).json({ error: check.error });
     props = check.pids;
   }
+  const ops = req.user.role === 'admin' && b.operator_ids !== undefined ? resolveOperators(req, b.operator_ids) : null;
   const tx = db.transaction(() => {
     db.prepare('UPDATE payment_configs SET name=?, mchid=?, serial_no=?, notify_url=?, appid=? WHERE id=?')
       .run(b.name !== undefined ? String(b.name).trim() : c.name,
@@ -133,18 +162,24 @@ r.put('/:id', (req, res) => {
       const ins = db.prepare('INSERT OR IGNORE INTO payment_config_bindings (config_id, property_id) VALUES (?,?)');
       for (const pid of props) ins.run(c.id, pid);
     }
+    if (ops) {
+      db.prepare('DELETE FROM payment_config_access WHERE config_id=?').run(c.id);
+      const insAcc = db.prepare('INSERT OR IGNORE INTO payment_config_access (config_id, admin_user_id) VALUES (?,?)');
+      for (const op of ops.list) insAcc.run(c.id, op);
+    }
   });
   tx();
   res.json({ ok: true });
 });
 
-// 删除配置（解除全部项目绑定）
+// 删除配置（解除全部项目绑定与操作员授权）
 r.delete('/:id', (req, res) => {
   const c = db.prepare('SELECT * FROM payment_configs WHERE id=?').get(req.params.id);
   if (!c) return res.status(404).json({ error: '配置不存在' });
-  if (req.user.role !== 'admin' && c.created_by !== req.user.id) return res.status(403).json({ error: '无权删除该配置' });
+  if (!canManage(req, c)) return res.status(403).json({ error: '该配置由主管理员分配，不可删除' });
   const tx = db.transaction(() => {
     db.prepare('DELETE FROM payment_config_bindings WHERE config_id=?').run(c.id);
+    db.prepare('DELETE FROM payment_config_access WHERE config_id=?').run(c.id);
     db.prepare('DELETE FROM payment_configs WHERE id=?').run(c.id);
   });
   tx();
