@@ -1,0 +1,57 @@
+/* ============================================================
+   路客家 · 移动端适配（自动识别设备宽度，≤768px 视为手机/平板竖屏）
+   ============================================================ */
+@media (max-width: 768px) {
+  /* 主区域留白收窄 */
+  .el-main { padding: 10px !important; }
+
+  /* 卡片：取消固定最大宽度，铺满屏幕 */
+  .el-card { max-width: none !important; width: 100%; }
+
+  /* 弹窗 / 确认框：占屏 92% */
+  .el-dialog { width: 92% !important; }
+  .el-message-box { width: 92% !important; max-width: 92% !important; }
+  .el-drawer { --el-drawer-width: 78% !important; width: 78% !important; }
+
+  /* 表单：标签在上、输入框在下（避免窄屏挤压） */
+  .el-form-item { display: block; margin-bottom: 14px; }
+  .el-form-item__label { display: block; float: none; text-align: left; width: auto !important; padding: 0 0 4px !important; line-height: 1.5 !important; height: auto !important; }
+  .el-form-item__content { margin-left: 0 !important; }
+
+  /* 栅格：全部堆叠为单列 */
+  .el-row { margin-left: 0 !important; margin-right: 0 !important; }
+  .el-col { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; margin-bottom: 10px; }
+
+  /* 固定宽度的选择器 / 日期区间 / 数字输入框铺满 */
+  .el-select, .el-input-number { width: 100% !important; max-width: 100% !important; }
+  .el-date-editor, .el-range-editor { width: 100% !important; max-width: 100% !important; }
+
+  /* 顶部栏紧凑，隐藏状态小标签减少拥挤 */
+  .el-header { height: 50px !important; padding: 0 10px !important; }
+  .el-header .el-tag { display: none; }
+  .el-header span[style*="font-size:15px"] { font-size: 14px !important; }
+
+  /* 表格宽度自适应（el-table 内部自带横向滚动） */
+  .el-table { width: 100% !important; }
+
+  /* 操作按钮换行不溢出 */
+  .el-button { margin: 2px 0; }
+  .el-button + .el-button { margin-left: 6px; }
+
+  /* 统计卡片数值略缩 */
+  .el-card div[style*="font-size:26px"] { font-size: 20px !important; }
+
+  /* 顶部统计区等 flex 区自动换行 */
+  div[style*="display:flex"] { flex-wrap: wrap; }
+
+  /* 抽屉菜单品牌区 */
+  .lkj-drawer-brand {
+    height: 56px; display: flex; align-items: center; padding: 0 16px;
+    border-bottom: 1px solid #f0f2f5; font-size: 16px; font-weight: 700; color: #2f54eb;
+  }
+  .lkj-drawer-brand small { font-size: 12px; color: #9aa3b2; margin-left: 8px; font-weight: 400; }
+
+  /* 登录页 */
+  .lkj-login-page { padding: 16px; box-sizing: border-box; }
+  .lkj-login-card { width: 100% !important; max-width: 380px; padding: 28px 20px !important; }
+}
