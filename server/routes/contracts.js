@@ -117,14 +117,14 @@ r.post('/:id/checkout', auth, (req, res) => {
   res.json({ ok: true });
 });
 
-// 作废合同
+// 作废合同（记录作废时间，供历史查询）
 r.post('/:id/void', auth, (req, res) => {
   const acc = canContract(req, req.params.id);
   if (acc === null) return res.status(404).json({ error: '合同不存在' });
   if (acc === false) return res.status(403).json({ error: '无权操作该项目' });
   const c = db.prepare('SELECT * FROM contracts WHERE id=?').get(req.params.id);
   if (!c) return res.status(404).json({ error: '合同不存在' });
-  db.prepare(`UPDATE contracts SET status='void' WHERE id=?`).run(req.params.id);
+  db.prepare(`UPDATE contracts SET status='void', ended_at=datetime('now','localtime') WHERE id=?`).run(req.params.id);
   db.prepare(`UPDATE rooms SET status='vacant' WHERE id=? AND status='rented'`).run(c.room_id);
   res.json({ ok: true });
 });
