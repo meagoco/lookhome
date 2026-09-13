@@ -11,7 +11,7 @@ const CFG = {
   apiv3Key: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_pay_apiv3_key'`).get() || {}).value || '',
   serialNo: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_pay_serial_no'`).get() || {}).value || '',
   privateKey: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_pay_private_key'`).get() || {}).value || '',
-  notifyUrl: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_pay_notify_url'`).get() || {}).value || 'https://www.lookhome.com.cn/api/pay/notify',
+  notifyUrl: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_pay_notify_url'`).get() || {}).value || '',
   appid: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_mini_appid'`).get() || {}).value || '',
   secret: () => (db.prepare(`SELECT value FROM settings WHERE key='wechat_mini_secret'`).get() || {}).value || ''
 };
