@@ -121,14 +121,32 @@ async function save() {
   dlg.value = false; load(); ElMessage.success(`绑定成功（合同#${data.id}），押金账单已生成`);
 }
 async function checkout(row) {
-  await ElMessageBox.confirm(`确认 ${row.tenant_name} 退房（${row.property_name}·${row.room_no}）？房间将恢复空置。`, '退房');
+  let v = '';
+  try {
+    const r = await ElMessageBox.prompt(
+      `确认「${row.tenant_name}」退房（${row.property_name}·${row.room_no}）？\n退房后：合同解除、房间 ${row.room_no} 自动改为空置，此操作不可恢复。\n请输入「退房」两字确认：`,
+      '退房确认',
+      { confirmButtonText: '确认退房', inputPlaceholder: '输入：退房' }
+    );
+    v = (r.value || '').trim();
+  } catch { return; }
+  if (v !== '退房') return ElMessage.warning('已取消：需输入「退房」两字才能执行');
   await api.post(`/contracts/${row.id}/checkout`, { remark: '前台退房' });
-  load(); ElMessage.success('已退房，记得处理押金退款');
+  load(); ElMessage.success('已退房：合同已解除，房间已改为空置，记得处理押金退款');
 }
 async function voidC(row) {
-  await ElMessageBox.confirm('确认作废该合同？', '作废');
+  let v = '';
+  try {
+    const r = await ElMessageBox.prompt(
+      `确认作废「${row.tenant_name}」的合同（${row.property_name}·${row.room_no}）？\n作废后：合同标记作废、房间 ${row.room_no} 自动改为空置，此操作不可恢复。\n请输入「作废」两字确认：`,
+      '作废确认',
+      { confirmButtonText: '确认作废', inputPlaceholder: '输入：作废' }
+    );
+    v = (r.value || '').trim();
+  } catch { return; }
+  if (v !== '作废') return ElMessage.warning('已取消：需输入「作废」两字才能执行');
   await api.post(`/contracts/${row.id}/void`);
-  load(); ElMessage.success('已作废');
+  load(); ElMessage.success('已作废：合同已作废，房间已改为空置');
 }
 onMounted(() => { load(); loadOptions(); });
 </script>
