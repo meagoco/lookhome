@@ -69,8 +69,22 @@ r.delete('/:id', auth, (req, res) => {
   if (!canAccessProject(req, pid)) return res.status(403).json({ error: '无权操作该项目' });
   const n = db.prepare("SELECT COUNT(*) c FROM contracts WHERE room_id=? AND status='active'").get(req.params.id).c;
   if (n > 0) return res.status(400).json({ error: `该房间存在 ${n} 份正常（在租）合同，请先退房或作废合同后再删除` });
-  db.prepare('DELETE FROM rooms WHERE id=?').run(req.params.id);
-  res.json({ ok: true });
+  const cleaned = db.transaction(() => {
+    const contracts = db.prepare('SELECT id FROM contracts WHERE room_id=?').all(req.params.id).map(x => x.id);
+    let bills = [];
+    if (contracts.length) {
+      bills = db.prepare(`SELECT id FROM bills WHERE contract_id IN (${contracts.map(() => '?').join(',')})`).all(...contracts).map(x => x.id);
+    }
+    if (bills.length) db.prepare(`DELETE FROM bill_items WHERE bill_id IN (${bills.map(() => '?').join(',')})`).run(...bills);
+    if (bills.length) db.prepare(`DELETE FROM payments WHERE bill_id IN (${bills.map(() => '?').join(',')})`).run(...bills);
+    if (contracts.length) db.prepare(`DELETE FROM refunds WHERE contract_id IN (${contracts.map(() => '?').join(',')})`).run(...contracts);
+    if (bills.length) db.prepare(`DELETE FROM bills WHERE id IN (${bills.map(() => '?').join(',')})`).run(...bills);
+    if (contracts.length) db.prepare(`DELETE FROM contracts WHERE id IN (${contracts.map(() => '?').join(',')})`).run(...contracts);
+    db.prepare('DELETE FROM meter_readings WHERE room_id=?').run(req.params.id);
+    db.prepare('DELETE FROM rooms WHERE id=?').run(req.params.id);
+    return { contracts: contracts.length, bills: bills.length };
+  })();
+  res.json({ ok: true, cleaned });
 });
 
 export default r;
