@@ -40,7 +40,8 @@
         </el-form-item>
         <el-form-item label="退款金额"><el-input-number v-model="form.amount" :min="0.01" :max="maxAmount" style="width:100%;" /></el-form-item>
         <el-form-item label="备注"><el-input v-model="form.remark" placeholder="如：扣水电欠费/维修费" /></el-form-item>
-        <el-alert v-if="hint" :title="hint" type="info" :closable="false" />
+        <el-alert v-if="hint" :title="hint" type="info" :closable="false" style="margin-bottom:8px;" />
+        <el-alert title="确认后：押金记为已退，合同将自动解除（已退租），房间自动改为空置；租客小程序将无法再申请退押金。" type="warning" :closable="false" />
       </el-form>
       <template #footer><el-button @click="dlg=false">取消</el-button><el-button type="primary" @click="save">确认退款</el-button></template>
     </el-dialog>
