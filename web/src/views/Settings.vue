@@ -71,7 +71,7 @@
         <el-form-item label="APIv3密钥"><el-input v-model="pay.apiv3_key" type="password" show-password :placeholder="pay.apiv3_key_set ? '已配置（可留空不修改）' : '填写'" /></el-form-item>
         <el-form-item label="证书序列号"><el-input v-model="pay.serial_no" /></el-form-item>
         <el-form-item label="商户私钥"><el-input v-model="pay.private_key" type="textarea" :rows="3" :placeholder="pay.private_key_set ? '已配置（可留空不修改）' : '粘贴商户API证书私钥'" /></el-form-item>
-        <el-form-item label="支付回调地址"><el-input v-model="pay.notify_url" placeholder="https://www.lookhome.com.cn/api/pay/notify" /></el-form-item>
+        <el-form-item label="支付回调地址"><el-input v-model="pay.notify_url" placeholder="https://你的域名/api/pay/notify" /></el-form-item>
       </el-form>
       <el-button type="primary" size="small" @click="savePay">保存支付配置</el-button>
     </el-card>
@@ -250,7 +250,7 @@
           <el-input v-model="smtp.pass" type="password" show-password :placeholder="smtp.pass_set ? '已配置（留空不修改）' : 'SMTP 授权码'" />
         </el-form-item>
         <el-form-item label="发件人"><el-input v-model="smtp.from" placeholder="留空则使用账号" /></el-form-item>
-        <el-form-item label="系统访问地址"><el-input v-model="smtp.site_url" placeholder="如 https://www.lookhome.com.cn:3000（重置链接用，留空自动取当前地址）" /></el-form-item>
+        <el-form-item label="系统访问地址"><el-input v-model="smtp.site_url" placeholder="如 https://你的域名:3000（重置链接用，留空自动取当前地址）" /></el-form-item>
       </el-form>
       <el-button type="primary" size="small" @click="saveSmtp">保存邮件配置</el-button>
       <el-button size="small" style="margin-left:8px;" :loading="smtpTestLoading" @click="testSmtp">发送测试邮件</el-button>
