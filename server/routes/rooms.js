@@ -87,4 +87,56 @@ r.delete('/:id', auth, (req, res) => {
   res.json({ ok: true, cleaned });
 });
 
+// 房屋历史租赁查询（管理员/操作员；操作员仅限授权项目）
+r.get('/:id/history', auth, (req, res) => {
+  const room = db.prepare(`
+    SELECT r.*, p.name AS property_name FROM rooms r JOIN properties p ON p.id=r.property_id WHERE r.id=?`).get(req.params.id);
+  if (!room) return res.status(404).json({ error: '房间不存在' });
+  if (!canAccessProject(req, room.property_id)) return res.status(403).json({ error: '无权操作该项目' });
+  const contracts = db.prepare(`
+    SELECT c.*, t.name AS tenant_name, t.phone AS tenant_phone, t.id_card_enc AS tenant_id_card, t.verify_status
+    FROM contracts c JOIN tenants t ON t.id=c.tenant_id
+    WHERE c.room_id=? ORDER BY c.id DESC`).all(req.params.id);
+  const history = contracts.map(c => {
+    // 退房时间：退房(ended_at) / 作废(ended_at) / 在租则按合同到期
+    let actualEnd = null;
+    if (c.status === 'ended' || c.status === 'void') actualEnd = (c.ended_at || '').slice(0, 10);
+    const startD = new Date(c.start_date);
+    const endD = actualEnd ? new Date(actualEnd) : (c.status === 'active' ? null : new Date(c.end_date));
+    let durationText = '';
+    if (endD) {
+      const days = Math.max(1, Math.round((endD - startD) / 86400000));
+      const months = Math.floor(days / 30);
+      const rem = days % 30;
+      durationText = months >= 1 ? `${months}个月${rem ? `零${rem}天` : ''}` : `${days}天`;
+    } else {
+      durationText = '在租中';
+    }
+    const refunds = db.prepare(`
+      SELECT id, amount, status, done_at, remark FROM refunds WHERE contract_id=? ORDER BY id DESC`).all(c.id);
+    // 合同期内抄表（水/电 用量与金额）
+    const meters = db.prepare(`
+      SELECT meter_type, period, prev_reading, curr_reading, usage, amount FROM meter_readings
+      WHERE room_id=? AND period >= ? ORDER BY period`).all(req.params.id, c.start_date.slice(0, 7));
+    const water = meters.filter(m => m.meter_type === 'water').reduce((a, m) => ({ usage: a.usage + (m.usage || 0), amount: a.amount + (m.amount || 0) }), { usage: 0, amount: 0 });
+    const electric = meters.filter(m => m.meter_type === 'electric').reduce((a, m) => ({ usage: a.usage + (m.usage || 0), amount: a.amount + (m.amount || 0) }), { usage: 0, amount: 0 });
+    return {
+      id: c.id, status: c.status, start_date: c.start_date, end_date: c.end_date,
+      ended_at: c.ended_at || '', created_at: c.created_at, monthly_rent: c.monthly_rent,
+      deposit: c.deposit, rent_cycle: c.rent_cycle, pay_day: c.pay_day, remark: c.remark,
+      tenant_name: c.tenant_name, tenant_phone: c.tenant_phone, tenant_id_card: c.tenant_id_card,
+      verify_status: c.verify_status, duration_text: durationText, actual_end: actualEnd,
+      refunds, meter_water: water, meter_electric: electric
+    };
+  });
+  res.json({
+    room: {
+      id: room.id, room_no: room.room_no, property_name: room.property_name, status: room.status,
+      water_rate: room.water_rate || 0, electric_rate: room.electric_rate || 0,
+      garbage_fee: room.garbage_fee || 0, water_factor: room.water_factor || 1, electric_factor: room.electric_factor || 1
+    },
+    history
+  });
+});
+
 export default r;
