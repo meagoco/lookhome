@@ -93,4 +93,24 @@ r.get('/refunds', tenantAuth, (req, res) => {
   res.json(rows);
 });
 
+// 租客申请退押金（待房东/管理员后台手工同意；同意后自动解除合同并置空房间）
+r.post('/refunds/apply', tenantAuth, (req, res) => {
+  const { amount, apply_remark } = req.body || {};
+  const c = db.prepare(`
+    SELECT c.*, r.room_no, p.name AS property_name FROM contracts c
+    JOIN rooms r ON r.id=c.room_id JOIN properties p ON p.id=r.property_id
+    WHERE c.tenant_id=? AND c.status='active' ORDER BY c.id DESC LIMIT 1`).get(req.tenant.id);
+  if (!c) return res.status(400).json({ error: '当前没有生效合同，无法申请退押金' });
+  const dup = db.prepare(`SELECT id FROM refunds WHERE contract_id=? AND source='tenant' AND status='pending'`).get(c.id);
+  if (dup) return res.status(400).json({ error: '已有一笔待审批的退押金申请，请等待处理' });
+  const amt = amount != null && amount !== '' ? Number(amount) : c.deposit;
+  if (!(amt > 0)) return res.status(400).json({ error: '退款金额必须大于 0' });
+  if (amt > c.deposit) return res.status(400).json({ error: `退款不能超过押金 ${c.deposit} 元` });
+  const info = db.prepare(`
+    INSERT INTO refunds (contract_id,tenant_id,amount,refund_mode,source,status,apply_remark)
+    VALUES (?,?,?,?,?,?,?)`)
+    .run(c.id, req.tenant.id, amt, 'manual', 'tenant', 'pending', (apply_remark || '').toString().slice(0, 200));
+  res.json({ id: info.lastInsertRowid, status: 'pending', notice: '退押金申请已提交，等待房东确认' });
+});
+
 export default r;
