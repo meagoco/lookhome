@@ -32,8 +32,9 @@
           <template #default="{row}"><el-tag size="small" :type="statusType(row.status)">{{ statusName(row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column label="在租租客" min-width="100"><template #default="{row}">{{ row.tenant_name || '—' }}</template></el-table-column>
-        <el-table-column label="操作" width="140" fixed="right">
+        <el-table-column label="操作" width="190" fixed="right">
           <template #default="{row}">
+            <el-button link type="primary" @click="openHistory(row)">历史</el-button>
             <el-button link type="primary" @click="openRoom(row)">编辑</el-button>
             <el-button link type="danger" @click="delRoom(row)">删除</el-button>
           </template>
@@ -76,6 +77,58 @@
       </el-form>
       <template #footer><el-button @click="propDlg=false">取消</el-button><el-button type="primary" @click="saveProp">保存</el-button></template>
     </el-dialog>
+
+    <!-- 房屋历史租赁查询 -->
+    <el-dialog v-model="histDlg" :title="`历史租赁 · ${histRoom?.property_name} ${histRoom?.room_no}`" width="980px" top="4vh">
+      <template v-if="histRoom">
+        <el-descriptions :column="4" size="small" border style="margin-bottom:10px;">
+          <el-descriptions-item label="当前状态">{{ statusName(histRoom.status) }}</el-descriptions-item>
+          <el-descriptions-item label="水费单价">{{ histRoom.water_rate }} 元/吨</el-descriptions-item>
+          <el-descriptions-item label="电费单价">{{ histRoom.electric_rate }} 元/度</el-descriptions-item>
+          <el-descriptions-item label="垃圾费">{{ histRoom.garbage_fee }} 元/月</el-descriptions-item>
+        </el-descriptions>
+        <el-table :data="histRows" size="small" stripe>
+          <el-table-column type="expand">
+            <template #default="{row}">
+              <div style="padding:4px 12px 10px;">
+                <div style="font-size:12px;color:#6b7280;margin-bottom:6px;">合同期内抄表：水 {{ row.meter_water.usage }} 吨 / {{ row.meter_water.amount }} 元；电 {{ row.meter_electric.usage }} 度 / {{ row.meter_electric.amount }} 元</div>
+                <el-table :data="row.refunds" size="mini" border>
+                  <el-table-column label="押金退还记录" min-width="260">
+                    <template #default="{row:rf}">
+                      <el-tag size="small" :type="rf.status==='done'?'success':(rf.status==='rejected'?'danger':'warning')">{{ rf.status==='done'?'已退':(rf.status==='rejected'?'已驳回':'待审批') }}</el-tag>
+                      <span v-if="rf.amount" style="margin-left:6px;">{{ rf.amount }} 元</span>
+                      <span v-if="rf.done_at" style="margin-left:6px;color:#9aa3b2;">{{ rf.done_at }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="remark" label="备注" min-width="140" />
+                  <template #empty><span style="color:#c0c6d0;font-size:12px;">该合同无押金退款记录</span></template>
+                </el-table>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="80"><template #default="{row}"><el-tag size="small" :type="{active:'success',ended:'info',void:'danger'}[row.status]">{{ {active:'在租中',ended:'已退租',void:'作废'}[row.status] }}</el-tag></template></el-table-column>
+          <el-table-column prop="tenant_name" label="租赁人" width="90" />
+          <el-table-column prop="tenant_phone" label="手机号" width="120" />
+          <el-table-column prop="tenant_id_card" label="身份证" width="190" />
+          <el-table-column prop="duration_text" label="租赁时长" width="110" />
+          <el-table-column label="月租金" width="90"><template #default="{row}">{{ row.monthly_rent }} 元</template></el-table-column>
+          <el-table-column label="押金" width="80"><template #default="{row}">{{ row.deposit }} 元</template></el-table-column>
+          <el-table-column label="押金退还" width="140"><template #default="{row}">
+            <template v-if="row.refunds.length">
+              <el-tag v-for="rf in row.refunds" :key="rf.id" size="small" :type="rf.status==='done'?'success':(rf.status==='rejected'?'danger':'warning')" style="margin:1px 2px;">{{ rf.status==='done'?'已退':(rf.status==='rejected'?'驳回':'待审') }}{{ rf.amount ? ' ' + rf.amount + '元' : '' }}</el-tag>
+            </template>
+            <span v-else style="color:#c0c6d0;">未退</span>
+          </template></el-table-column>
+          <el-table-column label="签订时间" width="150"><template #default="{row}">{{ row.created_at }}</template></el-table-column>
+          <el-table-column label="退房/结束" width="150"><template #default="{row}">
+            <span v-if="row.status==='active'">在租中（{{ row.end_date }}到期）</span>
+            <span v-else-if="row.actual_end">{{ row.actual_end }}{{ row.status==='void' ? ' 作废' : '' }}</span>
+            <span v-else>{{ row.end_date }}</span>
+          </template></el-table-column>
+        </el-table>
+      </template>
+      <template #footer><el-button @click="histDlg=false">关闭</el-button></template>
+    </el-dialog>
   </div>
 </template>
 
@@ -92,6 +145,9 @@ const filterProp = ref(null);
 const filterStatus = ref('all');
 const roomDlg = ref(false);
 const propDlg = ref(false);
+const histDlg = ref(false);
+const histRoom = ref(null);
+const histRows = ref([]);
 const emptyRoom = () => ({ id: null, property_id: filterProp.value, room_no: '', layout: '', orientation: '', area: 0, ref_rent: 0, garbage_fee: 0, water_rate: 0, electric_rate: 0, water_factor: 1, electric_factor: 1, status: 'vacant', available_date: '', remark: '' });
 const roomForm = reactive(emptyRoom());
 const propForm = reactive({ id: null, name: '', address: '', type: 'centralized', remark: '' });
@@ -138,6 +194,13 @@ async function delProp() {
   await confirmDelete(`项目「${p.name}」`);
   await api.delete(`/properties/${p.id}`);
   filterProp.value = null; load(); ElMessage.success('项目已删除');
+}
+
+async function openHistory(row) {
+  const data = await api.get(`/rooms/${row.id}/history`);
+  histRoom.value = data.room;
+  histRows.value = data.history;
+  histDlg.value = true;
 }
 
 onMounted(load);
