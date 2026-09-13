@@ -40,6 +40,7 @@ import tenantRoutes from './routes/tenant.js';
 import backupRoutes from './routes/backup.js';
 import meteringsRoutes from './routes/meterings.js';
 import adminUsersRoutes from './routes/admin-users.js';
+import payConfigsRoutes from './routes/pay-configs.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/settings', settingsRoutes);
@@ -57,6 +58,7 @@ app.use('/api/tenant', tenantRoutes);
 app.use('/api/backups', backupRoutes);
 app.use('/api/meterings', meteringsRoutes);
 app.use('/api/admin-users', adminUsersRoutes);
+app.use('/api/pay-configs', payConfigsRoutes);
 
 // 前端静态文件（web/dist 构建后）
 const WEB_DIST = join(__dirname, '..', 'web', 'dist');
