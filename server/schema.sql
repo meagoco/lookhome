@@ -229,3 +229,10 @@ CREATE TABLE IF NOT EXISTS payment_config_bindings (
   PRIMARY KEY (config_id, property_id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pcb_property ON payment_config_bindings(property_id);
+
+-- 配置-操作员授权（管理员把已配置好的支付配置分配给操作员）
+CREATE TABLE IF NOT EXISTS payment_config_access (
+  config_id INTEGER NOT NULL REFERENCES payment_configs(id),
+  admin_user_id INTEGER NOT NULL REFERENCES admin_users(id),
+  PRIMARY KEY (config_id, admin_user_id)
+);
