@@ -59,6 +59,9 @@ async function main() {
   db.prepare('UPDATE admin_users SET password_hash=? WHERE id=?').run(bcrypt.hashSync(String(newPwd), 10), u.id);
   // 使未使用的重置令牌失效
   db.prepare('UPDATE password_resets SET used=1 WHERE user_id=? AND used=0').run(u.id);
+  // 写入可追溯的审计日志（而非仅打印到易失的控制台输出）
+  db.prepare('INSERT INTO operation_logs (admin_id, action, detail) VALUES (?, ?, ?)')
+    .run(u.id, 'reset_password_cli', `通过 reset-password.js CLI 工具重置密码（用户「${u.username}」，#${u.id}，角色：${u.role}）`);
   console.log(`[成功] 用户「${u.username}」密码已重置（#${u.id}，角色：${u.role}）。`);
   console.log('       如启用了邮箱找回，该账号未使用的重置链接已同时作废。');
 }
