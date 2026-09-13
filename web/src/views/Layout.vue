@@ -14,6 +14,7 @@
         <el-menu-item index="/payments"><el-icon><Tickets /></el-icon><span>收款记录</span></el-menu-item>
         <el-menu-item index="/refunds"><el-icon><RefreshLeft /></el-icon><span>押金退款</span></el-menu-item>
         <el-menu-item index="/meterings"><el-icon><DataLine /></el-icon><span>抄表管理</span></el-menu-item>
+        <el-menu-item index="/pay-configs"><el-icon><CreditCard /></el-icon><span>支付配置</span></el-menu-item>
         <el-menu-item v-if="role==='admin'" index="/settings"><el-icon><Setting /></el-icon><span>系统设置</span></el-menu-item>
       </el-menu>
     </el-aside>
@@ -38,7 +39,7 @@
 import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../api';
-import { Odometer, HomeFilled, UserFilled, Document, Money, Tickets, RefreshLeft, Setting, DataLine } from '@element-plus/icons-vue';
+import { Odometer, HomeFilled, UserFilled, Document, Money, Tickets, RefreshLeft, Setting, DataLine, CreditCard } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const user = reactive({});
