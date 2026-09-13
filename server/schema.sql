@@ -205,3 +205,27 @@ CREATE TABLE IF NOT EXISTS operation_logs (
   detail TEXT,
   created_at TEXT DEFAULT (datetime('now','localtime'))
 );
+
+-- 微信支付配置模板（主管理员=全局，操作员=自持）
+CREATE TABLE IF NOT EXISTS payment_configs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  mchid TEXT NOT NULL,
+  apiv3_key TEXT,
+  serial_no TEXT,
+  private_key TEXT,
+  notify_url TEXT,
+  appid TEXT,
+  scope TEXT DEFAULT 'global',
+  created_by INTEGER DEFAULT 0,
+  status INTEGER DEFAULT 1,
+  created_at TEXT DEFAULT (datetime('now','localtime'))
+);
+
+-- 配置-项目绑定（一个项目只能绑定一个支付配置）
+CREATE TABLE IF NOT EXISTS payment_config_bindings (
+  config_id INTEGER NOT NULL REFERENCES payment_configs(id),
+  property_id INTEGER NOT NULL REFERENCES properties(id),
+  PRIMARY KEY (config_id, property_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pcb_property ON payment_config_bindings(property_id);
