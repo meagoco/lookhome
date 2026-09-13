@@ -63,6 +63,12 @@ export function initDb() {
     PRIMARY KEY (config_id, admin_user_id)
   )`);
 
+  // 迁移：退款增加租客申请字段（小程序申请退押金 / 后台审批）
+  const rfCols = db.prepare('PRAGMA table_info(refunds)').all().map(c => c.name);
+  if (!rfCols.includes('tenant_id')) db.exec('ALTER TABLE refunds ADD COLUMN tenant_id INTEGER');
+  if (!rfCols.includes('source')) db.exec("ALTER TABLE refunds ADD COLUMN source TEXT DEFAULT 'admin'");
+  if (!rfCols.includes('apply_remark')) db.exec('ALTER TABLE refunds ADD COLUMN apply_remark TEXT');
+
   // 默认配置（预留：小程序/支付/功能开关）
   const defaults = {
     site_name: '路客家',
