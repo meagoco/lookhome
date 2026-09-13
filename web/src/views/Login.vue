@@ -1,6 +1,6 @@
 <template>
-  <div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#f0f4ff;">
-    <div style="width:380px;background:#fff;border-radius:12px;padding:36px 32px;box-shadow:0 8px 30px rgba(47,84,235,.12);">
+  <div class="lkj-login-page" style="height:100vh;display:flex;align-items:center;justify-content:center;background:#f0f4ff;">
+    <div class="lkj-login-card" style="width:380px;background:#fff;border-radius:12px;padding:36px 32px;box-shadow:0 8px 30px rgba(47,84,235,.12);">
       <div style="text-align:center;margin-bottom:24px;">
         <div style="font-size:26px;font-weight:800;color:#2f54eb;">路客家</div>
         <div style="font-size:13px;color:#9aa3b2;margin-top:6px;">公寓管理系统</div>
