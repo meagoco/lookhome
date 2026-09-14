@@ -1,0 +1,44 @@
+<view class="wrap">
+  <view class="logo">
+    <text class="logo-text">路客家</text>
+    <text class="logo-sub">公寓管理 · 租客端</text>
+  </view>
+
+  <view class="card">
+    <view class="tabs">
+      <text class="tab {{tab==='login'?'active':''}}" bindtap="switchTab" data-tab="login">登录</text>
+      <text class="tab {{tab==='register'?'active':''}}" bindtap="switchTab" data-tab="register">实名注册</text>
+    </view>
+
+    <view class="field">
+      <text class="label">手机号</text>
+      <input class="input" type="number" maxlength="11" placeholder="请输入手机号" bindinput="onPhone" value="{{phone}}" />
+    </view>
+    <view class="field" wx:if="{{tab==='login'}}">
+      <text class="label">身份证号</text>
+      <input class="input" placeholder="请输入身份证号（登录凭证）" bindinput="onIdCard" value="{{idCard}}" />
+    </view>
+    <view class="field" wx:if="{{tab==='register'}}">
+      <text class="label">姓名</text>
+      <input class="input" placeholder="与身份证一致" bindinput="onName" value="{{name}}" />
+    </view>
+    <view class="field" wx:if="{{tab==='register'}}">
+      <text class="label">身份证号</text>
+      <input class="input" placeholder="请输入身份证号" bindinput="onIdCard" value="{{idCard}}" />
+    </view>
+
+    <button class="btn-primary submit" loading="{{loading}}" bindtap="submit">
+      {{tab==='login' ? '登 录' : '注册并等待审核'}}
+    </button>
+
+    <view class="divider" wx:if="{{tab==='login'}}">
+      <text>或</text>
+    </view>
+    <button class="btn-wechat" wx:if="{{tab==='login'}}" loading="{{wxLoading}}" bindtap="wxLogin">
+      <text class="wx-icon">微</text> 微信一键登录
+    </button>
+
+    <view class="tip" wx:if="{{tab==='register'}}">注册后需房东在后台审核身份，审核通过即可查看账单缴费</view>
+    <view class="tip" wx:if="{{tab==='login' && boundOpenid}}">已通过微信识别，登录后将自动绑定该微信</view>
+  </view>
+</view>
