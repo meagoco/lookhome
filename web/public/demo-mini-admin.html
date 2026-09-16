@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LookHome · 小程序全流程演示</title>
+<style>
+:root{--b1:#1fa2ff;--b2:#12d8fa;--ink:#1b2a4a;--sub:#8a97ad;--muted:#9aa3b2;--line:#e8edf4;--green:#23b26d;--red:#e5484d;--bg:#f5f7fa;--yellow:#f6b73c;--orange:#ff6b35}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#eef4ff,#e9f9fe);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.wrap{display:flex;gap:40px;align-items:center;justify-content:center;max-width:1080px;width:100%;flex-wrap:wrap}
+.intro{flex:1;min-width:300px;max-width:420px}
+.intro .brand{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.intro .brand img{height:42px;width:auto}
+.intro h1{font-size:24px;color:var(--ink);font-weight:700}
+.intro .tag{color:var(--sub);font-size:14px;margin:8px 0 14px;line-height:1.7}
+.intro .steps{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.intro .steps span{background:#fff;border:1px solid var(--line);color:var(--ink);font-size:12px;padding:6px 12px;border-radius:999px}
+.intro .note{color:var(--muted);font-size:12.5px;line-height:1.8;background:rgba(255,255,255,.7);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.intro .note b{color:var(--ink)}
+.intro .links{margin-top:16px;display:flex;gap:12px;flex-wrap:wrap}
+.intro .links a{color:var(--b1);font-size:13px;text-decoration:none;font-weight:600;background:#fff;border:1px solid var(--line);padding:8px 16px;border-radius:999px}
+/* 手机框 */
+.phone{width:375px;background:#fff;border-radius:46px;padding:12px;box-shadow:0 24px 70px rgba(27,42,74,.22);flex-shrink:0}
+.screen{width:100%;background:var(--bg);border-radius:36px;overflow:hidden;position:relative;height:750px;display:flex;flex-direction:column}
+.statusbar{background:linear-gradient(90deg,var(--b1),var(--b2));color:#fff;font-size:12px;padding:10px 22px 4px;display:flex;justify-content:space-between;font-weight:600}
+.navbar{background:linear-gradient(90deg,var(--b1),var(--b2));color:#fff;padding:8px 16px 14px;display:flex;align-items:center;gap:10px}
+.navbar .an{font-size:15px;font-weight:700}
+.navbar .pt{margin-left:auto;font-size:12px;background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px}
+.content{flex:1;overflow-y:auto;padding:12px 14px 66px;scrollbar-width:none}
+.content::-webkit-scrollbar{display:none}
+.tabbar{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;padding:8px 0;z-index:30}
+.tabbar .tab{flex:1;text-align:center;color:var(--muted);font-size:10.5px;cursor:pointer;padding:2px 0}
+.tabbar .tab .ic{font-size:19px;margin-bottom:1px}
+.tabbar .tab.on{color:var(--b1);font-weight:600}
+/* 通用组件 */
+.card{background:#fff;border-radius:14px;padding:13px 14px;margin-bottom:11px;box-shadow:0 2px 8px rgba(27,42,74,.05);border:1px solid var(--line)}
+.sec{display:flex;align-items:baseline;justify-content:space-between;padding:8px 4px 10px}
+.sec .t{font-size:15px;font-weight:700;color:var(--ink)}
+.sec .s{font-size:11.5px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:26px 0}
+button{font-family:inherit;border:none;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:13px;font-weight:600;padding:9px 18px;background:#eef1f6;color:var(--ink)}
+.btn.grad{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff}
+.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}
+.btn.sm{font-size:12px;padding:6px 12px}
+/* 首页（游客/租客） */
+.me-card{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;border:none}
+.me-top{display:flex;align-items:center;justify-content:space-between}
+.me-name{font-size:17px;font-weight:700}
+.me-badge{font-size:11px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.25)}
+.me-room{margin-top:8px;display:flex;align-items:baseline;justify-content:space-between;font-size:12.5px;opacity:.95}
+.verify-tip{display:flex;align-items:center;justify-content:space-between}
+.verify-tip .vt{font-size:12.5px;color:var(--sub);flex:1}
+.btn-verify{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;font-size:12.5px;border-radius:999px;padding:8px 16px;margin-left:10px}
+.room-top{display:flex;align-items:center}
+.room-name{font-size:14px;font-weight:600;color:var(--ink);flex:1}
+.room-no{font-size:14px;font-weight:700;color:var(--b1);margin-right:10px}
+.room-tag{font-size:10.5px;color:var(--b1);background:#eaf6ff;border-radius:6px;padding:3px 9px}
+.room-mid{margin-top:7px;display:flex}
+.room-item{font-size:11.5px;color:var(--sub);background:var(--bg);border-radius:6px;padding:3px 10px;margin-right:8px}
+.room-bottom{margin-top:10px;display:flex;align-items:center;justify-content:space-between}
+.price-num{font-size:19px;font-weight:800;color:var(--orange)}
+.price-unit{font-size:11.5px;color:var(--muted)}
+.room-actions{display:flex;gap:8px}
+.btn-contact{background:#eaf6ff;color:var(--b1);font-size:12px;padding:7px 14px;border-radius:999px}
+.btn-sign{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;font-size:12px;padding:7px 14px;border-radius:999px}
+.lock-txt{font-size:11.5px;color:#b8bfcc}
+/* 登录页 */
+.login-wrap{padding:28px 20px 0}
+.logo{text-align:center;margin-bottom:30px}
+.logo-text{font-size:28px;font-weight:800;color:var(--b1)}
+.logo-sub{display:block;margin-top:6px;font-size:13px;color:var(--muted)}
+.ltabs{display:flex;margin-bottom:20px}
+.ltab{flex:1;text-align:center;padding:10px 0;color:var(--sub);border-bottom:2px solid #e5e7eb;font-size:14px;cursor:pointer}
+.ltab.active{color:var(--b1);border-bottom-color:var(--b1);font-weight:600}
+.field{margin-bottom:14px}
+.label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+.input{width:100%;background:var(--bg);border:none;border-radius:9px;padding:11px 12px;font-size:13.5px;color:var(--ink);outline:none}
+.btn-phone{margin-top:6px;background:#eaf6ff;color:var(--b1);font-size:11.5px;padding:6px 12px;border-radius:9px}
+.btn-primary{margin-top:16px;width:100%;background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;border-radius:11px;padding:12px 0;font-size:15px;font-weight:600}
+.divider{display:flex;align-items:center;margin:18px 0 4px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:#e5e7eb}
+.divider span{padding:0 14px;font-size:12px;color:#9ca3af}
+.btn-wechat{width:100%;background:#07c160;color:#fff;border-radius:11px;padding:11px 0;font-size:14px;font-weight:600;margin-top:12px}
+.btn-wechat .wx{display:inline-block;width:18px;height:18px;line-height:18px;margin-right:6px;border-radius:5px;background:rgba(255,255,255,.25);font-size:11px}
+.tip{margin-top:12px;font-size:11px;color:#9ca3af;text-align:center;line-height:1.6}
+.admin-link{margin-top:34px;text-align:center;font-size:11px;color:#b8bfcc;cursor:pointer;text-decoration:underline}
+/* 管理端 */
+.adm-top{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 12px}
+.adm-user{display:flex;align-items:baseline}
+.adm-name{font-size:16px;font-weight:700;color:var(--ink)}
+.adm-role{font-size:11px;color:var(--b1);background:#eaf6ff;border-radius:999px;padding:3px 10px;margin-left:8px}
+.adm-out{font-size:13px;color:var(--muted);cursor:pointer}
+.atabs{display:flex;background:#eef1f6;border-radius:12px;padding:4px;margin-bottom:14px}
+.atab{flex:1;text-align:center;font-size:13px;color:var(--sub);padding:9px 0;border-radius:9px;cursor:pointer}
+.atab.active{background:#fff;color:var(--b1);font-weight:600;box-shadow:0 2px 6px rgba(31,162,255,.15)}
+.app-row{display:flex;align-items:center;justify-content:space-between}
+.app-name{font-size:14px;font-weight:600;color:var(--ink)}
+.app-room{font-size:12.5px;color:var(--b1)}
+.app-row.sub{margin-top:7px;font-size:12px;color:var(--muted)}
+.btn-approve{background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;font-size:12px;padding:7px 14px;border-radius:999px}
+.adm-room-price{font-size:12.5px;font-weight:700;color:var(--orange);margin-left:auto}
+.bill-top{display:flex;align-items:center}
+.bill-name{font-size:13.5px;font-weight:600;color:var(--ink)}
+.bill-room{font-size:11.5px;color:var(--sub);margin-left:8px;flex:1}
+.st{font-size:12px}
+.st.paid{color:var(--green)}.st.overdue{color:var(--red)}.st.unpaid{color:var(--yellow)}
+.bill-bottom{margin-top:6px;display:flex;align-items:baseline;font-size:12px}
+.bill-title{color:var(--sub)}.bill-due{color:var(--muted);margin:0 12px}.bill-amount{font-size:14px;font-weight:700;color:var(--ink);margin-left:auto}
+.stat-head{display:flex}
+.stat-col{flex:1;text-align:center}
+.stat-num{display:block;font-size:21px;font-weight:800;color:var(--b1)}
+.stat-label{display:block;margin-top:4px;font-size:11px;color:var(--muted)}
+.fee-row{display:flex;justify-content:space-between;padding:10px 0;font-size:13.5px;border-bottom:1px solid #f3f4f6}
+.fee-row .k{color:#374151}.fee-row .v{font-weight:700;color:var(--ink)}
+.fee-row.total{border-bottom:none;font-weight:700}
+/* 弹层 */
+.mask{position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(17,24,39,.55);z-index:99;display:none;align-items:flex-end}
+.mask.show{display:flex}
+.sheet{width:100%;background:#fff;border-radius:20px 20px 0 0;padding:18px 18px 22px;max-height:78%;overflow-y:auto}
+.wxpay-head{background:#07c160;margin:-18px -18px 12px;padding:22px 18px 18px;text-align:center;color:#fff;border-radius:20px 20px 0 0}
+.wxpay-logo{font-size:12px;letter-spacing:2px;opacity:.9;margin-bottom:8px}
+.wxpay-amt{font-size:30px;font-weight:700}
+.wxpay-amt-label{font-size:11.5px;opacity:.85;margin-top:4px}
+.sheet h4{font-size:15px;color:var(--ink);margin-bottom:8px}
+.sh-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.sh-title{font-size:15px;font-weight:700;color:var(--ink)}
+.sh-close{font-size:20px;color:var(--muted);cursor:pointer}
+.banner{font-size:12.5px;border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.banner.blue{background:#eaf6ff;color:var(--b1)}
+.banner.green{background:#e8f8ee;color:var(--green)}
+.banner.red{background:#fdeeee;color:var(--red)}
+.form-row{display:flex;align-items:center;margin-bottom:11px}
+.form-label{width:78px;font-size:12.5px;color:#374151;flex-shrink:0}
+.form-input{flex:1;background:var(--bg);border:none;border-radius:8px;padding:9px 10px;font-size:13px;outline:none;color:var(--ink)}
+.contract-scroll{max-height:220px;overflow-y:auto;background:var(--bg);border-radius:10px;padding:10px 12px;font-size:11.5px;color:var(--sub);line-height:1.8;margin-bottom:10px;white-space:pre-line}
+.agree-row{display:flex;align-items:center;gap:7px;margin-bottom:12px;font-size:12px;color:var(--ink)}
+.term-group{flex:1;overflow-y:auto}
+.grp-label{font-size:12.5px;color:var(--ink);font-weight:600;margin:6px 0 9px}
+.opt-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.opt{font-size:12.5px;color:var(--sub);background:var(--bg);border:1.5px solid #e8edf4;border-radius:9px;padding:7px 12px;cursor:pointer}
+.opt.on{color:#1fa2ff;background:#eaf6ff;border-color:#1fa2ff;font-weight:600}
+.pay-note{font-size:11.5px;color:var(--sub);background:var(--bg);border-radius:8px;padding:8px 10px;margin-bottom:12px}
+.checkbox{width:16px;height:16px;border-radius:5px;border:1.5px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+.checkbox.on{background:linear-gradient(135deg,var(--b1),var(--b2));border-color:transparent}
+.btn-row{display:flex;gap:10px;margin-top:14px}
+.btn-row .btn{flex:1}
+/* 账单 */
+.overview .ov-row{display:flex;align-items:center;justify-content:space-between}
+.ov-name{font-size:15px;font-weight:700;color:var(--ink)}
+.ov-room{font-size:12px;color:var(--sub)}
+.ov-sub{font-size:12px;color:var(--muted)}
+.ov-unpaid{display:flex;align-items:baseline;justify-content:space-between;margin-top:10px;padding-top:9px;border-top:1px solid #f0f2f5;font-size:13px;color:var(--sub)}
+.price.big{font-size:21px;font-weight:800;color:var(--orange)}
+.bill-card-top{display:flex;align-items:center}
+.bill-card-title{font-size:13.5px;font-weight:600;color:var(--ink);flex:1}
+.tag{font-size:11px;padding:3px 10px;border-radius:6px}
+.tag-dep{color:#b45309;background:#fef3c7}.tag-mon{color:var(--b1);background:#eaf6ff}
+.bill-card-mid{display:flex;align-items:center;justify-content:space-between;margin-top:6px;font-size:11.5px;color:var(--muted)}
+.bill-card-bottom{display:flex;align-items:baseline;justify-content:space-between;margin-top:7px}
+.price{font-size:16px;font-weight:700;color:var(--ink)}
+.rmind{font-size:10px;color:var(--green);background:#e8f8ee;padding:3px 8px;border-radius:999px}
+.rno{font-size:10px;color:#b8bfcc;background:#f1f3f6;padding:3px 8px;border-radius:999px}
+.arrow{color:#c3cad6;font-size:14px}
+/* 明细 */
+.head{text-align:center;padding:10px 0 14px}
+.head-title{font-size:13px;color:var(--sub)}
+.head-amount{font-size:26px;font-weight:800;color:var(--ink);margin:4px 0}
+.head-st{font-size:12px}
+.head-st.paid{color:var(--green)}.head-st.overdue{color:var(--red)}.head-st.unpaid{color:var(--yellow)}
+.detail-item{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid #f5f6f8}
+.detail-item .k{color:var(--sub)}.detail-item .v{font-weight:600;color:var(--ink)}
+.detail-item.total .v{color:var(--red);font-size:14px;font-weight:800}
+.pay-bar{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);padding:10px 14px;z-index:20}
+.pay-bar .btn{width:100%;padding:12px 0;font-size:14px}
+.pay-tip{font-size:10.5px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.6}
+/* 我的 */
+.avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}
+.user{display:flex;align-items:center}
+.uinfo{margin-left:12px;flex:1}
+.uname{font-size:15px;font-weight:700;color:var(--ink)}
+.uphone{font-size:12px;color:var(--muted);margin-top:3px}
+.verify{font-size:11px;padding:4px 10px;border-radius:999px;background:#e8f8ee;color:var(--green)}
+.sec-title{font-size:14px;font-weight:700;color:var(--ink);margin-bottom:9px}
+.kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;color:var(--sub);border-bottom:1px solid #f7f8fa}
+.kv b{color:var(--ink);font-weight:600}
+.refund-btn{width:100%;background:linear-gradient(135deg,var(--b1),var(--b2));color:#fff;border-radius:11px;padding:12px 0;font-size:14px;font-weight:600;margin-bottom:12px}
+.logout{width:100%;background:#fff;border:1px solid #f3d3d3;color:var(--red);border-radius:11px;padding:11px 0;font-size:13.5px;margin-top:4px}
+.refund-note{text-align:center;font-size:11px;color:var(--muted);margin:-6px 0 12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <div class="brand"><img src="lookhome-icon.png" alt="LookHome" onerror="this.style.display='none'"><h1 style="font-size:24px;color:var(--ink)">LookHome LOOKHOME</h1></div>
+    <h1>小程序 · 全流程演示</h1>
+    <div class="tag">从打开小程序开始，还原正式源码的登录分流：游客看房 → 租客登录 / 底部「管理员登录」→ 进入租客端或管理端三视图。</div>
+    <div class="steps"><span>① 游客首页看房</span><span>② 我的 → 登录页</span><span>③ 租客登录 / 管理员登录</span><span>④ 管理端：房源签约 · 本月账单 · 收入统计</span></div>
+    <div class="note"><b>演示说明：</b>界面 1:1 还原小程序正式源码（管理端底部三标签、账单未缴优先 + 提醒状态、押金独立统计、游客可随时回房源页、实名注册二要素核验直过、退押金规则、已签约可向他人推荐）。演示数据为虚构，不写入正式系统。<br><br>右侧手机上：<b>游客点「我的」</b>进登录页（底部三标签保留，可随时回房源）；登录页<b>底部小字「管理员登录」</b>进管理端；管理端<b>退出</b>回登录页。</div>
+    <div class="links"><a href="demo-hub.html">← 返回测试中心</a></div>
+  </div>
+
+  <div class="phone">
+    <div class="screen" id="screen">
+      <div class="statusbar"><span>9:41</span><span>LookHome 租客端</span><span>5G 100%</span></div>
+      <div class="navbar" id="navbar"></div>
+      <div class="content" id="content"></div>
+      <div class="tabbar" id="tabbar" style="display:none"></div>
+      <div class="mask" id="mask"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ 演示数据（已接入沙箱，以下为本地回退缓存） ============ */
+var DATA = {
+  rooms: [
+    { id:1, property_name:'阳光公寓', room_no:'301', layout:'一室一厅', area:45, bathroom:1, window:1, ref_rent:1600, deposit:1600 },
+    { id:2, property_name:'阳光公寓', room_no:'302', layout:'两室一厅', area:62, bathroom:1, window:1, ref_rent:2200, deposit:2200 },
+    { id:3, property_name:'阳光公寓', room_no:'205', layout:'一室', area:38, bathroom:0, window:1, ref_rent:1300, deposit:1300 },
+    { id:4, property_name:'滨江雅苑', room_no:'801', layout:'两室', area:58, bathroom:1, window:1, ref_rent:2000, deposit:2000 },
+    { id:5, property_name:'滨江雅苑', room_no:'802', layout:'一室一厅', area:46, bathroom:1, window:0, ref_rent:1650, deposit:1650 },
+    { id:6, property_name:'金枫家园', room_no:'1102', layout:'一室', area:40, bathroom:0, window:1, ref_rent:1400, deposit:1400 }
+  ],
+  apps: [
+    { id:1, tenant_name:'张三', property_name:'阳光公寓', room_no:'301', created_at:'2026-09-10 14:22', ref_rent:1600 },
+    { id:2, tenant_name:'李四', property_name:'滨江雅苑', room_no:'801', created_at:'2026-09-12 09:05', ref_rent:2000 }
+  ],
+  bills: [
+    { id:1, title:'2026-09 月度账单', bill_type:'month', period:'2026-09', tenant_name:'张三', room_no:'301', property_name:'阳光公寓', total:1600, status:'paid', due:10, reminded:true, items:[['房租',1600]] },
+    { id:2, title:'2026-09 月度账单', bill_type:'month', period:'2026-09', tenant_name:'李四', room_no:'801', property_name:'滨江雅苑', total:2000, status:'unpaid', due:15, reminded:true, items:[['房租',2000]] },
+    { id:3, title:'2026-09 月度账单', bill_type:'month', period:'2026-09', tenant_name:'王五', room_no:'302', property_name:'阳光公寓', total:2200, status:'overdue', due:5, reminded:false, items:[['房租',2200]] },
+    { id:4, title:'2026-09 月度账单', bill_type:'month', period:'2026-09', tenant_name:'赵六', room_no:'205', property_name:'阳光公寓', total:1300, status:'unpaid', due:20, reminded:false, items:[['房租',1300]] }
+  ],
+  fees: [ {name:'租金', v:8600}, {name:'水费', v:480}, {name:'电费', v:520} ],
+  feeTotal: 9600,
+  monthIncome: 9600,
+  depositTotal: 2000
+};
+
+/* ============ 沙箱联动层（与「管理后台演示」同一测试沙箱，双向可见） ============ */
+var TOKEN_KEY = 'lk_demo_token';
+function dmApi(path, opts){
+  opts = opts || {};
+  var h = { 'Content-Type': 'application/json' };
+  var t = localStorage.getItem(TOKEN_KEY);
+  if (t) h['Authorization'] = 'Bearer ' + t;
+  return fetch('/api/demo' + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined })
+    .then(function(r){ return r.json().then(function(d){ return { s: r.status, d: d }; }); });
+}
+var SAND = { ready: false, rooms: [], apps: [], allBills: [], tenant: null, bills: [], stats: null, fees: [], depTotal: 0, monthTotal: 0 };
+function fmtDate(dt){ return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0'); }
+function sandboxReload(cb){
+  dmApi('/data').then(function(r1){
+    if (r1.s !== 200) { toast('测试沙箱不可用，请从「测试中心」进入'); setTimeout(function(){ location.href = 'demo-hub.html'; }, 900); return cb && cb(); }
+    var d = r1.d.data || {};
+    var props = d.props || [];
+    function pname(pid){ var x = props.filter(function(q){ return q.id === pid; })[0]; return x ? x.name : ''; }
+    SAND.rooms = (d.rooms || []).filter(function(x){ return x.status === 'vacant'; }).map(function(x){
+      return { id: x.id, property_name: pname(x.pid), room_no: x.no, layout: x.layout, area: x.area, bathroom: x.bathroom, window: x.window, ref_rent: x.rent, deposit: x.deposit || x.rent, avail: x.avail };
+    });
+    SAND.bills = d.bills || [];
+    var tt = d.tenant || { name: '张伟', verify: 'approved' };
+    SAND.tenant = { name: tt.name, phone: tt.phone, verified: tt.verify === 'approved', room: tt.room || '', rent: tt.rent, deposit: tt.deposit, leaseEnd: tt.leaseEnd || '' };
+    var m = new Date(), ym = m.getFullYear() + '-' + String(m.getMonth()+1).padStart(2,'0');
+    dmApi('/lease-applications').then(function(r2){
+      SAND.apps = (r2.s === 200 ? (r2.d || []) : []).filter(function(a){ return a.status === 'pending'; }).map(function(a){
+        return { id: a.id, tenant_name: a.tenant_name, property_name: a.property_name, room_no: a.room_no, ref_rent: a.ref_rent || 0, created_at: a.created_at || '' };
+      });
+      dmApi('/bills?period=' + ym).then(function(r3){
+        SAND.allBills = (r3.s === 200 ? ((r3.d || {}).rows || []) : []).map(function(b){
+          return { id: b.id, title: b.title, bill_type: b.bill_type, period: b.period, total: b.total, status: b.status, tenant_name: b.tenant_name, room_no: b.room_no, property_name: b.property_name, due: b.due || 1, reminded: !!(b.reminder && b.reminder.reminded) };
+        });
+        dmApi('/bills/stats?start=' + ym + '-01&end=' + ym + '-31').then(function(r4){
+          var st = r4.s === 200 ? r4.d : { fees: [], fee_total: 0 };
+          SAND.fees = (st.fees || []).filter(function(f){ return f.code !== 'deposit'; }).map(function(f){ return { name: f.name, v: f.v }; });
+          SAND.monthTotal = st.fee_total || 0;
+          dmApi('/bills?period=' + ym + '&bill_type=deposit').then(function(r5){
+            var depRows = r5.s === 200 ? ((r5.d || {}).rows || []) : [];
+            SAND.depTotal = depRows.reduce(function(s2, x){ return s2 + x.total; }, 0);
+            dmApi('/dashboard').then(function(r6){
+              SAND.stats = r6.s === 200 ? r6.d : null;
+              SAND.ready = true;
+              if (cb) cb();
+            });
+          });
+        });
+      });
+    });
+  });
+}
+function afterSandbox(fn){
+  if (SAND.ready) { fn(); return; }
+  sandboxReload(fn);
+}
+
+/* ============ 状态 ============ */
+var S = {
+  view: 'home-guest',   // home-guest | login | adm-login | home-tenant | bill | billDetail | profile | adm-rooms | adm-bills | adm-stats
+  tenant: null,         // 游客态（登录后赋值）
+  adm: { name:'路客', role:'主管理员' },
+  billId: 1,
+  contractAgree: false
+};
+var NAV = {
+  'home-guest': { t:'LookHome', pt:'房源' },
+  'home-tenant': { t:'LookHome', pt:'房源' },
+  'login': { t:'登录', pt:'' },
+  'adm-login': { t:'管理端登录', pt:'' },
+  'guest-bill': { t:'我的账单', pt:'' },
+  'bill': { t:'我的账单', pt:'账单' },
+  'billDetail': { t:'账单明细', pt:'' },
+  'profile': { t:'我的', pt:'' },
+  'adm-rooms': { t:'管理端', pt:'' },
+  'adm-bills': { t:'管理端', pt:'' },
+  'adm-stats': { t:'管理端', pt:'' }
+};
+var content = document.getElementById('content');
+var navbar = document.getElementById('navbar');
+var tabbar = document.getElementById('tabbar');
+var mask = document.getElementById('mask');
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function toast(msg){
+  var el = document.createElement('div');
+  el.style.cssText = 'position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);background:rgba(17,24,39,.8);color:#fff;font-size:12.5px;padding:10px 18px;border-radius:10px;z-index:120;white-space:nowrap';
+  el.textContent = msg;
+  document.getElementById('screen').appendChild(el);
+  setTimeout(function(){ el.remove(); }, 1600);
+}
+function go(v){
+  S.view = v;
+  renderNav(); renderTab(); renderContent();
+  var c = content; c.scrollTop = 0;
+}
+function renderNav(){
+  var n = NAV[S.view];
+  navbar.innerHTML = '<img src="lookhome-icon.png" alt="" style="height:22px;width:auto;border-radius:6px" onerror="this.style.display=\'none\'"><span class="an">' + n.t + '</span>' + (n.pt ? '<span class="pt">' + n.pt + '</span>' : '');
+}
+function renderTab(){
+  var admin = S.view.indexOf('adm-') === 0;
+  if (admin) {
+    tabbar.style.display = 'flex';
+    var at = [['adm-rooms','🏠','房源签约'],['adm-bills','🧾','本月账单'],['adm-stats','📊','收入统计']];
+    tabbar.innerHTML = at.map(function(x){
+      return '<div class="tab' + (S.view === x[0] ? ' on' : '') + '" onclick="go(\'' + x[0] + '\')"><div class="ic">' + x[1] + '</div>' + x[2] + '</div>';
+    }).join('');
+    return;
+  }
+  if (S.view === 'adm-login' || S.view === 'billDetail') { tabbar.style.display = 'none'; return; }
+  tabbar.style.display = 'flex';
+  var tabs = [['home-guest','🏠','首页'],['bill','🧾','账单'],['profile','👤','我的']];
+  var on = S.view === 'home-tenant' ? 'home-guest' : (S.view === 'login' ? 'profile' : S.view);
+  tabbar.innerHTML = tabs.map(function(x){
+    return '<div class="tab' + (on === x[0] ? ' on' : '') + '" onclick="tabGo(\'' + x[0] + '\')"><div class="ic">' + x[1] + '</div>' + x[2] + '</div>';
+  }).join('');
+}
+function tabGo(v){
+  if (v === 'home-guest') { go(S.tenant ? 'home-tenant' : 'home-guest'); return; }
+  if (v === 'bill') { go(S.tenant ? 'bill' : 'guest-bill'); return; }
+  if (v === 'profile') { go(S.tenant ? 'profile' : 'login'); return; }
+  go(v);
+}
+/* ============ 首页 ============ */
+function viewHome(guest){
+  var html = '';
+  var me = S.tenant;
+  html += '<div class="card me-card">' +
+    '<div class="me-top"><span class="me-name">' + (me ? esc(me.name) : '租客') + '</span>' +
+    '<span class="me-badge">' + (me ? (me.verified ? '已实名' : '待实名') : '待实名') + '</span></div>' +
+    '<div class="me-room">' + (me && me.property_name ? '<span>' + esc(me.property_name) + ' · ' + esc(me.room_no) + '</span><span>月租 ' + me.monthly_rent + '元</span>' : '<span>暂未入住，看看下面的空置房源吧</span>') + '</div></div>';
+  if (!me || !me.verified) {
+    html += '<div class="card verify-tip"><span class="vt">实名认证后可联系房东、在线签约</span><button class="btn-verify" onclick="go(\'login\')">去实名认证</button></div>';
+  }
+  var rooms = SAND.rooms || [];
+  html += '<div class="sec"><span class="t">空置房源</span><span class="s">共 ' + rooms.length + ' 套</span></div>';
+  rooms.forEach(function(r){
+    html += '<div class="card">' +
+      '<div class="room-top"><span class="room-name">' + esc(r.property_name) + '</span><span class="room-no">' + esc(r.room_no) + '</span><span class="room-tag">空置</span></div>' +
+      '<div class="room-mid">' + (r.layout ? '<span class="room-item">' + r.layout + '</span>' : '') + (r.area ? '<span class="room-item">' + r.area + '㎡</span>' : '') + '<span class="room-item">' + (r.bathroom ? '有卫生间' : '无卫生间') + '</span><span class="room-item">' + (r.window ? '有窗户' : '无窗户') + '</span></div>' +
+      '<div class="room-bottom"><div><span class="price-num">' + r.ref_rent + '</span><span class="price-unit"> 元/月</span></div>' +
+      (me && me.verified
+        ? '<div class="room-actions"><button class="btn-contact" onclick="toast(\'拨号 ' + (SAND.tenant && SAND.tenant.phone ? SAND.tenant.phone : '138****6688') + '\')">联系房东</button>' + (me.property_name ? '<button class="btn-sign" onclick="shareApp()">向他人推荐</button>' : '<button class="btn-sign" onclick="openSign(' + r.id + ')">立即签约</button>') + '</div>'
+        : '<span class="lock-txt">实名后可联系房东、签约</span>') +
+      '</div></div>';
+  });
+  if (!rooms.length) html += '<div class="empty" style="display:block">暂无空置房源</div>';
+  content.innerHTML = html;
+}
+/* ============ 登录页 ============ */
+function viewLogin(){
+  var html = '<div class="login-wrap">' +
+    '<div class="logo"><span class="logo-text">LookHome</span><span class="logo-sub">公寓管理 · 租客端</span></div>' +
+    '<div class="ltabs"><span class="ltab active" id="lt-login">登录</span><span class="ltab" id="lt-reg">实名注册</span></div>' +
+    '<div class="field"><span class="label">手机号</span><input class="input" id="in-phone" type="text" placeholder="请输入手机号"></div>' +
+    '<div class="field"><span class="label">身份证号</span><input class="input" id="in-idcard" placeholder="请输入身份证号（登录凭证）"></div>' +
+    '<button class="btn-primary" onclick="tenantLogin()">登 录</button>' +
+    '<div class="divider"><span>或</span></div>' +
+    '<button class="btn-wechat" onclick="wechatLogin()"><span class="wx">微</span>微信一键登录</button>' +
+    '<div class="tip" style="display:none">已通过微信识别，登录后将自动绑定该微信</div>' +
+    '<div class="admin-link" onclick="go(\'adm-login\')">管理员登录</div>' +
+    '</div>';
+  content.innerHTML = html;
+  document.getElementById('lt-login').onclick = function(){ regMode(false); };
+  document.getElementById('lt-reg').onclick = function(){ regMode(true); };
+}
+function regMode(isReg){
+  var html = '<div class="login-wrap">' +
+    '<div class="logo"><span class="logo-text">LookHome</span><span class="logo-sub">公寓管理 · 租客端</span></div>' +
+    '<div class="ltabs"><span class="ltab' + (!isReg ? ' active' : '') + '" id="lt-login">登录</span><span class="ltab' + (isReg ? ' active' : '') + '" id="lt-reg">实名注册</span></div>';
+  if (!isReg) {
+    html += '<div class="field"><span class="label">手机号</span><input class="input" placeholder="请输入手机号"></div>' +
+      '<div class="field"><span class="label">身份证号</span><input class="input" placeholder="请输入身份证号（登录凭证）"></div>' +
+      '<button class="btn-primary" onclick="tenantLogin()">登 录</button>' +
+      '<div class="divider"><span>或</span></div>' +
+      '<button class="btn-wechat" onclick="wechatLogin()"><span class="wx">微</span>微信一键登录</button>' +
+      '<div class="admin-link" onclick="go(\'adm-login\')">管理员登录</div>';
+  } else {
+    html += '<div class="field"><span class="label">手机号</span><input class="input" id="reg-phone" type="text" placeholder="点击下方按钮获取" readonly><button class="btn-phone" onclick="getPhone()">微信一键获取手机号</button></div>' +
+      '<div class="field"><span class="label">姓名</span><input class="input" id="reg-name" placeholder="与身份证一致"></div>' +
+      '<div class="field"><span class="label">身份证号</span><input class="input" id="reg-id" placeholder="请输入身份证号"></div>' +
+      '<button class="btn-primary" onclick="regVerify()">在线实名验证并注册</button>' +
+      '<div class="tip">通过腾讯云二要素核验（姓名 + 身份证一致）后<b>即时注册成功</b>，无需人工审核</div>' +
+      '<div class="admin-link" onclick="go(\'adm-login\')">管理员登录</div>';
+  }
+  html += '</div>';
+  content.innerHTML = html;
+  document.getElementById('lt-login').onclick = function(){ regMode(false); };
+  document.getElementById('lt-reg').onclick = function(){ regMode(true); };
+}
+function getPhone(){
+  document.getElementById('reg-phone').value = '138****6688';
+  toast('已通过微信快速验证获取手机号');
+}
+function sandboxTenant(extra){
+  var t = SAND.tenant || { name:'张伟', phone:'138****0000', verified:true, room:'', rent:0, deposit:0, leaseEnd:'' };
+  var roomParts = (t.room || '').split(' · ');
+  var obj = { name: t.name, phone: t.phone, verified: !!t.verified, property_name: roomParts[0] || null, room_no: roomParts[1] || null, monthly_rent: t.rent, deposit: t.deposit, start: '2026-08-01', end: t.leaseEnd || '' };
+  for (var k in (extra || {})) obj[k] = extra[k];
+  return obj;
+}
+function regVerify(){
+  var phone = document.getElementById('reg-phone').value;
+  var name = document.getElementById('reg-name').value.trim();
+  var idc = document.getElementById('reg-id').value.trim();
+  if (!phone) { toast('请先点击「微信一键获取手机号」'); return; }
+  if (!name) { toast('请填写姓名'); return; }
+  if (idc.length < 15) { toast('身份证号格式不正确'); return; }
+  toast('腾讯云二要素核验通过，注册成功');
+  S.tenant = sandboxTenant({ name: name, phone: phone });
+  go('home-tenant');
+}
+function tenantLogin(){
+  toast('登录成功：' + (SAND.tenant ? SAND.tenant.name : '张伟') + ' 已实名');
+  S.tenant = sandboxTenant();
+  go('home-tenant');
+}
+function wechatLogin(){
+  toast('微信一键登录成功');
+  S.tenant = sandboxTenant();
+  go('home-tenant');
+}
+/* ============ 管理员登录 ============ */
+function viewAdmLogin(){
+  var html = '<div class="login-wrap">' +
+    '<div class="logo"><span class="logo-text">LookHome</span><span class="logo-sub">管理端登录</span></div>' +
+    '<div class="field"><span class="label">账号</span><input class="input" placeholder="管理员 / 操作员账号"></div>' +
+    '<div class="field"><span class="label">密码</span><input class="input" type="password" placeholder="请输入密码"></div>' +
+    '<button class="btn-primary" onclick="admLogin()">管理员登录</button>' +
+    '<div class="tip" style="cursor:pointer;color:var(--b1)" onclick="go(\'login\')">返回租客登录</div>' +
+    '</div>';
+  content.innerHTML = html;
+}
+function admLogin(){
+  toast('登录成功：路客 主管理员');
+  go('adm-rooms');
+}
+/* ============ 管理端 ============ */
+function admFrame(){
+  var html = '<div class="adm-top"><div class="adm-user"><span class="adm-name">' + esc(S.adm.name) + '</span><span class="adm-role">' + esc(S.adm.role) + '</span></div><span class="adm-out" onclick="admOut()">退出</span></div>';
+  return html;
+}
+function viewAdmRooms(){
+  var html = admFrame();
+  var apps = SAND.apps || [];
+  html += '<div class="sec"><span class="t">签约申请（' + apps.length + '）</span></div>';
+  if (apps.length) {
+    apps.forEach(function(a){
+      html += '<div class="card"><div class="app-row"><span class="app-name">' + esc(a.tenant_name) + '</span><span class="app-room">' + esc(a.property_name) + ' · ' + esc(a.room_no) + '</span></div>' +
+        '<div class="app-row sub"><span>' + (a.created_at || '') + '</span><button class="btn-approve" onclick="openApprove(' + a.id + ')">确认签约</button></div></div>';
+    });
+  } else html += '<div class="empty">暂无待处理的签约申请</div>';
+  var rooms = SAND.rooms || [];
+  html += '<div class="sec"><span class="t">剩余空置房源（' + rooms.length + '）</span></div>';
+  rooms.forEach(function(r){
+    html += '<div class="card"><div class="room-top"><span class="room-name">' + esc(r.property_name) + '</span><span class="room-no">' + esc(r.room_no) + '</span><span class="room-tag">空置</span></div>' +
+      '<div class="room-mid">' + (r.area ? '<span class="room-item">' + r.area + '㎡</span>' : '') + (r.layout ? '<span class="room-item">' + r.layout + '</span>' : '') + '<span class="room-item">' + (r.bathroom ? '有卫' : '无卫') + '</span><span class="room-item">' + (r.window ? '有窗' : '无窗') + '</span><span class="adm-room-price">' + r.ref_rent + '元/月</span></div></div>';
+  });
+  content.innerHTML = html;
+}
+function openApprove(id){
+  var a = (SAND.apps || []).filter(function(x){ return x.id === id; })[0];
+  if (!a) { toast('申请已处理'); return; }
+  var now = new Date();
+  var start = fmtDate(now);
+  var endD = new Date(now.getFullYear(), now.getMonth() + 12, 1); endD.setDate(endD.getDate() - 1);
+  var end = fmtDate(endD);
+  mask.innerHTML = '<div class="sheet" style="width:100%" onclick="event.stopPropagation()">' +
+    '<div class="sh-head"><span class="sh-title">确认签约</span><span class="sh-close" onclick="closeMask()">×</span></div>' +
+    '<div class="banner blue">' + esc(a.tenant_name) + ' · ' + esc(a.property_name) + ' ' + esc(a.room_no) + '</div>' +
+    '<div class="form-row"><span class="form-label">月租金</span><input class="form-input" id="ap-rent" value="' + (a.ref_rent || '') + '"></div>' +
+    '<div class="form-row"><span class="form-label">押金</span><input class="form-input" id="ap-dep" value="' + (a.ref_rent || '') + '"></div>' +
+    '<div class="form-row"><span class="form-label">租期起</span><input class="form-input" id="ap-start" value="' + start + '"></div>' +
+    '<div class="form-row"><span class="form-label">租期止</span><input class="form-input" id="ap-end" value="' + end + '"></div>' +
+    '<div class="banner green">确认后自动生成合同与押金账单，写回测试沙箱，管理后台同步可见</div>' +
+    '<div class="btn-row"><button class="btn ghost" onclick="closeMask()">取消</button><button class="btn grad" onclick="approveOk(' + id + ')">确认签约</button></div></div>';
+  mask.classList.add('show');
+}
+function approveOk(id){
+  var rent = document.getElementById('ap-rent').value;
+  var dep = document.getElementById('ap-dep').value;
+  var start = document.getElementById('ap-start').value;
+  var end = document.getElementById('ap-end').value;
+  dmApi('/lease-applications/' + id + '/approve', { method: 'POST', body: { start_date: start, end_date: end, monthly_rent: Number(rent), deposit: Number(dep) } }).then(function(res){
+    if (res.s !== 200) { toast(res.d && res.d.error ? res.d.error : '确认失败'); return; }
+    closeMask();
+    toast('已签约：合同与押金账单已生成，写回沙箱（后台同步可见）');
+    sandboxReload(function(){ go('adm-rooms'); });
+  });
+}
+function viewAdmBills(){
+  var html = admFrame();
+  var now = new Date(), ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  html += '<div class="sec"><span class="t">' + ym + ' 缴款明细</span><span class="s">未缴优先 · 缴款日近者在前 · 已缴按缴款日排后</span></div>';
+  var list = (SAND.allBills || []).slice();
+  var today = new Date().getDate();
+  function score(x){
+    var eff = x.status;
+    if (eff !== 'paid' && (x.due || 1) < today) eff = 'overdue'; // 已过缴款日未缴 → 逾期
+    if (eff === 'overdue') return 10;                            // 逾期：最优先
+    if (eff !== 'paid') {                                        // 未缴
+      var d = Math.min(Math.abs((x.due||1) - today), 31 - Math.abs((x.due||1) - today));
+      if (d < 3 && x.reminded) return 9;                         // 距缴款日3日内且已提醒
+      return 8;                                                  // 其余未缴
+    }
+    return 7;                                                    // 已缴
+  }
+  list.sort(function(a, b){
+    var sa = score(a), sb = score(b);
+    if (sa !== sb) return sb - sa;                               // 数字越大越优先
+    if (sa >= 8) {                                               // 未缴同分：缴款日近者在前
+      var da = Math.min(Math.abs((a.due||1) - today), 31 - Math.abs((a.due||1) - today));
+      var dbb = Math.min(Math.abs((b.due||1) - today), 31 - Math.abs((b.due||1) - today));
+      return da - dbb;
+    }
+    return (a.due || 1) - (b.due || 1);                          // 已缴同分：按缴款日先后
+  });
+  list.forEach(function(b){
+    var eff = b.status;
+    if (eff !== 'paid' && (b.due || 1) < today) eff = 'overdue';
+    var unpaid = eff !== 'paid';
+    var rmind = unpaid ? (b.reminded ? '<span class="rmind">✓ 已提醒</span>' : '<span class="rno">未提醒</span>') : '';
+    html += '<div class="card"><div class="bill-top"><span class="bill-name">' + esc(b.tenant_name) + '</span><span class="bill-room">' + esc(b.property_name) + ' · ' + esc(b.room_no) + '</span><span style="display:flex;align-items:center;gap:6px"><span class="st ' + eff + '">' + (eff==='paid'?'已缴':eff==='overdue'?'逾期':'待缴') + '</span>' + rmind + '</span></div>' +
+      '<div class="bill-bottom"><span class="bill-title">' + esc(b.title) + '</span><span class="bill-due">缴款日 ' + (b.due||1) + ' 号</span><span class="bill-amount">' + b.total + ' 元</span></div></div>';
+  });
+  if (!list.length) html += '<div class="empty">本月暂无账单</div>';
+  content.innerHTML = html;
+}
+function viewAdmStats(){
+  var html = admFrame();
+  var now = new Date(), ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  var st = SAND.stats || {};
+  var collected = st.collected || 0;
+  var feeTotal = SAND.monthTotal || 0;
+  html += '<div class="card stat-head"><div class="stat-col"><span class="stat-num">' + collected + '</span><span class="stat-label">' + ym + ' 实收（元）</span></div>' +
+    '<div class="stat-col"><span class="stat-num">' + feeTotal + '</span><span class="stat-label">本月账单应收（元）</span></div></div>';
+  html += '<div class="sec"><span class="t">本月收入构成</span></div><div class="card">';
+  (SAND.fees || []).forEach(function(f){
+    html += '<div class="fee-row"><span class="k">' + f.name + '</span><span class="v">' + f.v + ' 元</span></div>';
+  });
+  html += '<div class="fee-row total"><span class="k">合计</span><span class="v">' + feeTotal + ' 元</span></div></div>';
+  html += '<div class="card"><div class="fee-row"><span class="k">本月押金（应收，不计收入）</span><span class="v">' + (SAND.depTotal || 0) + ' 元</span></div>' +
+    '<div class="banner blue" style="margin:2px 0 0">押金不计入收入合计，退房时按合同原路退还</div></div>';
+  content.innerHTML = html;
+}
+function admOut(){
+  toast('已退出登录');
+  go('login');
+}
+function closeMask(){ mask.classList.remove('show'); mask.innerHTML = ''; }
+mask.addEventListener('click', closeMask);
+/* ============ 租客账单 ============ */
+function viewBill(){
+  if (!S.tenant || !S.tenant.property_name) {
+    content.innerHTML = '<div class="card overview"><div class="ov-row"><span class="ov-name">' + (S.tenant ? esc(S.tenant.name) : '') + '</span><span class="ov-room">暂未绑定房间</span></div></div>' +
+      '<div class="empty" style="padding:60rpx 0">尚未签约，暂无账单；签约后在此查看缴款明细</div>';
+    return;
+  }
+  var bills = (SAND.bills || []).filter(function(b){ return b.bill_type !== 'deposit' || b.status !== 'paid'; });
+  var unpaid = bills.filter(function(b){ return b.status !== 'paid'; }).reduce(function(x, b){ return x + b.total; }, 0);
+  var html = '<div class="card overview">' +
+    '<div class="ov-row"><span class="ov-name">' + esc(S.tenant.name) + '</span><span class="ov-room">' + esc(S.tenant.property_name) + ' · ' + esc(S.tenant.room_no) + '</span></div>' +
+    '<div class="ov-row" style="margin-top:6px"><span class="ov-sub">月租 ' + S.tenant.monthly_rent + '元 ｜ 押金 ' + S.tenant.deposit + '元</span></div>' +
+    '<div class="ov-unpaid"><span>待缴合计</span><span class="price big">' + unpaid + ' 元</span></div></div>';
+  if (!bills.length) html += '<div class="empty" style="padding:40rpx 0">暂无账单</div>';
+  bills.forEach(function(b){
+    var type = b.dep ? 'deposit' : 'month';
+    html += '<div class="card" style="cursor:pointer" onclick="goBill(' + b.id + ')">' +
+      '<div class="bill-card-top"><span class="bill-card-title">' + esc(b.title) + '</span><span class="tag ' + (type==='deposit'?'tag-dep':'tag-mon') + '">' + (type==='deposit'?'押金':'月度') + '</span></div>' +
+      '<div class="bill-card-mid"><span>' + b.period + ' ｜ ' + esc(S.tenant.room_no) + '</span><span class="st ' + b.status + '">' + (b.status==='paid'?'已缴清':b.status==='overdue'?'已逾期':'待缴') + '</span></div>' +
+      '<div class="bill-card-bottom"><span class="price">' + b.total + ' 元</span><span class="arrow">›</span></div></div>';
+  });
+  content.innerHTML = html;
+}
+function goBill(id){
+  S.billId = id;
+  go('billDetail');
+}
+function viewBillDetail(){
+  var b = (SAND.bills || []).filter(function(x){ return x.id === S.billId; })[0] || { title:'账单', total:0, status:'paid', items:[] };
+  var eff = b.status;
+  var html = '<div class="head"><div class="head-title">' + esc(b.title) + '</div><div class="head-amount">' + b.total + ' 元</div><span class="head-st ' + eff + '">' + (eff==='paid'?'已缴清':eff==='overdue'?'已逾期':'待缴') + '</span></div>';
+  html += '<div class="card">';
+  (b.items || []).forEach(function(it){ html += '<div class="detail-item"><span class="k">' + esc(it[0]) + '</span><span class="v">' + it[1] + '.00 元</span></div>'; });
+  html += '<div class="detail-item total"><span class="k">合计</span><span class="v">' + b.total + '.00 元</span></div></div>';
+  if (eff !== 'paid') {
+    html += '<div class="pay-bar"><button class="btn grad" onclick="payBill()">微信支付</button><div class="pay-tip">点击支付先弹订阅授权，允许后拉起微信支付；授权一次保下月到期前 3 天自动提醒</div></div>';
+  } else {
+    html += '<div class="pay-bar"><button class="btn ghost" onclick="go(\'bill\')">返回账单</button></div>';
+  }
+  content.innerHTML = html;
+}
+function payBill(){
+  // 还原正式源码：点击支付 → 先弹订阅授权 → 允许/拒绝 → 继续支付
+  mask.innerHTML = '<div class="sheet" onclick="event.stopPropagation()">' +
+    '<h4>订阅通知</h4><div class="banner blue">LookHome 申请发送订阅消息</div>' +
+    '<div class="detail-item" style="border:none"><span class="k">账单缴费提醒</span><span class="v" style="color:var(--green)">✓</span></div>' +
+    '<div class="tip" style="text-align:left;font-size:11.5px;color:var(--muted);margin-bottom:12px">每月账单到期前自动通知您；授权一次保下一条提醒，支付后下月到期前 3 天自动提醒</div>' +
+    '<div class="btn-row"><button class="btn ghost" onclick="payDeny()">拒绝</button><button class="btn grad" onclick="payAllow()">允许</button></div></div>';
+  mask.classList.add('show');
+}
+function payAllow(){
+  closeMask();
+  toast('已授权：下月到期前自动提醒');
+  setTimeout(showWxPay, 400);
+}
+function payDeny(){
+  closeMask();
+  toast('未授权，将收不到到期提醒');
+  setTimeout(showWxPay, 400);
+}
+/* 模拟微信支付拉起（还原正式源码：/pay/jsapi 返回 wechat 时 wx.requestPayment）；支付成功写回沙箱 */
+function showWxPay(){
+  var b = (SAND.bills || []).filter(function(x){ return x.id === S.billId; })[0] || { title:'账单', total:0 };
+  mask.innerHTML = '<div class="sheet wxpay" onclick="event.stopPropagation()">' +
+    '<div class="wxpay-head"><div class="wxpay-logo">微信支付</div><div class="wxpay-amt">' + b.total + '.00</div><div class="wxpay-amt-label">收款方：LookHome（LOOKHOME）</div></div>' +
+    '<div class="detail-item" style="border:none"><span class="k">账单</span><span class="v">' + esc(b.title) + '</span></div>' +
+    '<div class="btn-row"><button class="btn ghost" onclick="closeMask();toast(\'支付已取消\')">取消</button><button class="btn grad" onclick="wxPayOk(' + S.billId + ')">确认支付</button></div></div>';
+  mask.classList.add('show');
+}
+function wxPayOk(id){
+  dmApi('/data', { method: 'PUT', body: { data: { bills: [{ id: id, status: 'paid' }] } } }).then(function(res){
+    closeMask();
+    if (res.s !== 200) { toast('同步失败'); return; }
+    toast('微信支付成功（后台账单已同步入账）');
+    sandboxReload(function(){ go('bill'); });
+  });
+}
+/* ============ 我的 ============ */
+function viewProfile(){
+  var me = S.tenant;
+  var html = '<div class="card user"><div class="avatar">' + me.name[0] + '</div>' +
+    '<div class="uinfo"><div class="uname">' + esc(me.name) + '</div><div class="uphone">' + me.phone + '</div></div>' +
+    '<span class="verify">已实名</span></div>';
+  html += '<div class="card"><div class="sec-title">我的住房</div>' +
+    '<div class="kv"><span>房源</span><b>' + esc(me.property_name) + ' · ' + esc(me.room_no) + '</b></div>' +
+    '<div class="kv"><span>租期</span><b>' + me.start + ' ~ ' + me.end + '</b></div>' +
+    '<div class="kv"><span>月租金</span><b>' + me.monthly_rent + ' 元</b></div>' +
+    '<div class="kv"><span>押金</span><b>' + me.deposit + ' 元</b></div>' +
+    '<div class="kv"><span>垃圾费/月</span><b>0 元</b></div>' +
+    '<div class="kv"><span>水价/电价</span><b>5元/吨 / 1元/度</b></div></div>';
+  var ended = me.end ? new Date(me.end).getTime() < Date.now() : false;
+  var canRefund = ended && me.property_name;
+  html += '<button class="refund-btn" style="' + (canRefund ? '' : 'background:#cbd5e1;cursor:not-allowed') + '" onclick="' + (canRefund ? 'applyRefund()' : 'refundHint()') + '">申请退押金</button>';
+  if (!canRefund) {
+    html += '<div class="banner red" style="font-size:11.5px;margin-bottom:12px">退押金需同时满足：合同已到期 且 无欠款。当前' + (ended ? '存在待缴账单' : '合同未到期') + '，暂不可申请。</div>';
+  }
+  html += '<div class="refund-note">押金按原路退回，如有异议请联系管理员</div>';
+  html += '<button class="logout" onclick="tenantOut()">退出登录</button>';
+  content.innerHTML = html;
+}
+function shareApp(){
+  toast('已唤起转发：发送给微信好友（正式版 open-type=share）');
+}
+function refundHint(){
+  toast('合同已到期且无欠款后方可申请退押金');
+}
+function applyRefund(){
+  mask.innerHTML = '<div class="sheet" onclick="event.stopPropagation()">' +
+    '<div class="sh-head"><span class="sh-title">申请退押金</span><span class="sh-close" onclick="closeMask()">×</span></div>' +
+    '<div class="banner green">租约已履行完毕，可申请退还押金 ' + (S.tenant.deposit || 0) + ' 元；押金按原路退回，如有异议请联系管理员</div>' +
+    '<div class="btn-row"><button class="btn ghost" onclick="closeMask()">取消</button><button class="btn grad" onclick="closeMask();simSub(\'微信订阅授权\',\'允许后：房东同意退押金时，将通过微信通知您「押金已原路退回，请查看」\',\'doRefund()\')">提交申请</button></div></div>';
+  mask.classList.add('show');
+}
+function doRefund(){
+  // 沙箱张伟当前合同 id=1；写入沙箱 refunds → 管理后台「押金退款」同步可见
+  dmApi('/refunds', { method: 'POST', body: { contract_id: 1, amount: (S.tenant.deposit || 0), refund_mode: 'wechat', source: 'tenant', apply_remark: '演示：租客申请退押金' } }).then(function(res){
+    if (res.s !== 200) { toast(res.d && res.d.error ? res.d.error : '提交失败'); return; }
+    toast('退押金申请已提交，等待房东确认');
+  });
+}
+function simSub(title, content, cb){
+  mask.innerHTML = '<div class="sheet" onclick="event.stopPropagation()">' +
+    '<div class="sh-head"><span class="sh-title">' + title + '</span><span class="sh-close" onclick="closeMask()">×</span></div>' +
+    '<div class="banner green" style="font-size:12.5px">' + content + '</div>' +
+    '<div class="btn-row"><button class="btn ghost" onclick="closeMask()">拒绝</button><button class="btn grad" onclick="closeMask();' + cb + '">允许</button></div></div>';
+  mask.classList.add('show');
+}
+function tenantOut(){
+  S.tenant = null;
+  toast('已退出登录');
+  go('home-guest');
+}
+/* ============ 签约合同弹层 ============ */
+var S_TERM = 12, S_PAY = 'monthly';
+function openSign(id){
+  // 1) 先弹「酒店预订结果通知」订阅授权
+  simSub('微信订阅授权', '允许后：房东确认签约时，将通过微信提醒您支付租金及押金（酒店预订结果通知）', "showTermPay(" + id + ")");
+}
+function showTermPay(id){
+  var r = (SAND.rooms || []).filter(function(x){ return x.id === id; })[0];
+  if (!r) return;
+  S_TERM = 12; S_PAY = 'monthly';
+  var pays = [['monthly','月付（每月一付）',1],['quarterly','季付（每3个月一付）',3],['half','半年付（每6个月一付）',6],['yearly','年付（每12个月一付）',12]];
+  var terms = [1,3,6,12,24].map(function(t){ return '<div class="opt' + (t===S_TERM?' on':'') + '" data-t="' + t + '" onclick="pickTerm(this,' + t + ',' + id + ')">' + t + '个月</div>'; }).join('');
+  var payBtns = pays.map(function(p){ return '<div class="opt' + (p[0]===S_PAY?' on':'') + '" data-p="' + p[0] + '" onclick="pickPay(this,\'' + p[0] + '\',' + id + ')">' + p[1] + '</div>'; }).join('');
+  mask.innerHTML = '<div class="sheet" onclick="event.stopPropagation()">' +
+    '<div class="sh-head"><span class="sh-title">选择租期与支付方式</span><span class="sh-close" onclick="closeMask()">×</span></div>' +
+    '<div class="term-group"><div class="grp-label">租赁期限</div><div class="opt-grid">' + terms + '</div>' +
+    '<div class="grp-label">支付方式</div><div class="opt-grid">' + payBtns + '</div>' +
+    '<div class="pay-note" id="pay-note">租期 ' + S_TERM + ' 个月 · 首期应付 ' + (r.ref_rent*1) + ' 元（月租 ' + r.ref_rent + ' 元 × 1 期）</div></div>' +
+    '<button class="btn grad" style="width:100%;padding:12px 0;border-radius:11px;font-size:14px;font-weight:600" onclick="confirmTerm(' + id + ')">生成合同预览</button></div>';
+  mask.classList.add('show');
+}
+function pickTerm(el, t, id){ S_TERM = t; refreshTermPay(id); }
+function pickPay(el, p, id){ S_PAY = p; refreshTermPay(id); }
+function refreshTermPay(id){
+  var r = (SAND.rooms || []).filter(function(x){ return x.id === id; })[0];
+  if (!r) return;
+  var months = {monthly:1,quarterly:3,half:6,yearly:12}[S_PAY] || 1;
+  document.querySelectorAll('.term-group .opt').forEach(function(o){ o.className = 'opt' + (Number(o.dataset.t)===S_TERM ? ' on' : ''); });
+  document.querySelectorAll('.opt-grid .opt').forEach(function(o){ if (o.dataset.p) o.className = 'opt' + (o.dataset.p===S_PAY ? ' on' : ''); });
+  var note = document.getElementById('pay-note');
+  if (note) note.textContent = '租期 ' + S_TERM + ' 个月 · 首期应付 ' + (r.ref_rent*months) + ' 元（月租 ' + r.ref_rent + ' 元 × ' + months + ' 期）';
+}
+function confirmTerm(id){
+  var r = (SAND.rooms || []).filter(function(x){ return x.id === id; })[0];
+  if (!r) return;
+  openContract(id);
+}
+// 演示合同全文：与正式版《房屋租赁合同（房东权益保障版）》一致，括号说明不显示，按规则填入
+function renderContractText(r, start, end, term, pay){
+  var months = {monthly:1,quarterly:3,half:6,yearly:12}[pay] || 1;
+  var payText = {monthly:'☑ 月付（每月一付）',quarterly:'☑ 季付（每3个月一付）',half:'☑ 半年付（每6个月一付）',yearly:'☑ 年付（每12个月一付）'}[pay] || '☑ 月付（每月一付）';
+  var addr = (r.address || '示例地址') + ' ' + r.room_no + '室';
+  return '房屋租赁合同\n\n甲方（出租方）：' + r.property_name + '\n\n乙方（承租方）：\n姓名：' + S.tenant.name + '    身份证号：' + (S.tenant.id_card || '610102********1234') + '\n联系电话：' + S.tenant.phone + '\n\n依据《中华人民共和国民法典》及相关法律法规，甲乙双方在平等、自愿、公平、诚实信用的基础上，就乙方承租甲方自有房屋事宜，订立本合同。本合同优先保障甲方合法权益，明确双方权责，规避租赁期间各类潜在风险，双方共同遵照执行。\n\n第一条 房屋基本情况\n1、甲方出租房屋坐落：' + addr + '。\n2、房屋户型：' + (r.layout || '单间') + '，建筑面积：' + (r.area || 30) + '㎡，房屋用途为住宅居住，仅限乙方本人及本合同约定人员居住。\n3、房屋附属设施、设备、家具家电包括但不限于空调、冰箱、洗衣机、热水器、燃气灶、油烟机、床、衣柜、沙发、桌椅、门锁、门窗、水电管线等，签约前双方现场核验，退租需验收。\n4、甲方保证该房屋权属清晰、无抵押、无查封、无产权纠纷，有权合法出租该房屋，无任何第三方权利主张。\n\n第二条 租赁期限\n1、租赁期限自 ' + start + ' 起至 ' + end + ' 止，共计 ' + term + ' 个月。\n2、租赁期满，乙方享有同等条件优先续租权，申请续租，缴纳租金后，合同自动延续，延续时间参照首次签约期限，同时甲方有权随时解除合同，无需承担违约责任。\n\n第三条 租金标准及支付方式\n1、房屋月租金：人民币 ' + r.ref_rent + ' 元（租金不含水电费、燃气费、物业费、网费、有线电视费、垃圾清运费等一切杂费）。\n2、支付方式：' + payText + '，乙方需提前向甲方支付下期租金，不得逾期。\n3、首期租金支付时间：本合同签订当日，乙方一次性支付首期租金人民币 ' + (r.ref_rent*months) + ' 元。以甲方确认签约后，需实际支付金额为准。\n4、甲方指定收款方式：签约小程序付款或转账。\n5、租赁期内，甲方有权根据市场行情合理调整租金，续租时租金标准以双方协商为准，乙方无异议方可续签。\n\n第四条 押金约定\n1、本合同签订当日，乙方需向甲方支付房屋租赁押金人民币 ' + (r.deposit || r.ref_rent) + ' 元。\n2、押金仅用于担保房屋设施完好、各项费用结清、违约责任承担，不抵扣任何租金及杂费。\n3、租赁期满或合同合法解除后，乙方结清所有水电费等全部杂费，房屋及附属设施无损坏（自然损耗除外）、无污渍、无杂物遗留、恢复签约初始状态，甲方查验无误后，3个工作日内无息退还押金。\n4、出现以下任意情况，甲方有权全额或部分扣除押金，不足部分有权向乙方追偿：（1）乙方拖欠租金、水电费的；（2）房屋墙面、地面、门窗、家具家电、管线设施出现人为损坏、划痕、污渍、破损的；（3）乙方擅自改造房屋、改动管线、打孔、张贴大面积贴纸未恢复墙面的；（4）退租时房屋未清洁、遗留杂物垃圾，甲方需保洁、清运的费用；（5）乙方存在违约行为，需承担违约责任的。\n\n第五条 相关费用承担\n1、租赁期间，以下所有费用均由乙方全额承担，按时足额缴纳，不得拖欠：水费、电费及房屋使用产生的一切杂费。\n2、若乙方拒不缴费、长期拖欠，甲方有权代为补缴，所缴费用直接从押金中抵扣，乙方需在3日内补足押金，逾期未补足的，甲方有权解除合同、收回房屋并追究乙方违约责任。\n\n第六条 房屋使用规范\n1、乙方仅限将房屋用于合法住宅居住，严禁用于办公、民宿、合租、群租、经营性活动，严禁利用房屋从事赌博、吸毒、传销、扰民等一切违法违规、违背公序良俗的活动。一经发现，甲方立即单方解除合同，没收押金，乙方立即搬离，若产生行政处罚、邻里纠纷、经济损失，全部由乙方承担。\n2、严禁乙方擅自转租、转借、分租、转让房屋，严禁私自留宿大量无关人员。如需增加居住人员，必须提前书面征得甲方同意，并报备身份信息，未经同意的，视为乙方严重违约，甲方可立即解约、没收押金。\n3、乙方不得擅自改造房屋结构、墙体、地面、吊顶，不得改动水电管线，不得私自打孔、拆改门窗、固定家具。如需小幅添置物品，需提前书面征得甲方同意，租赁期满需恢复原状，产生的费用及损坏赔偿由乙方承担。\n4、乙方需爱护房屋及附属设施，正常使用产生的自然损耗由甲方负责维修；一切人为损坏、使用不当造成的故障、破损、漏水、漏电、堵塞等，全部由乙方负责维修、承担全部费用。\n5、乙方需遵守管理规定，文明居住，不得噪音扰民、高空抛物、违规停放物品、占用公共区域，否则由此产生的投诉、罚款、纠纷、赔偿责任均由乙方自行承担，给甲方造成损失的，乙方需全额赔付。\n6、租赁期间，房屋内所有人身、财产安全风险（包括但不限于滑倒、触电、燃气泄漏、火灾、盗窃、意外伤亡等），均由乙方自行承担，甲方不承担任何赔偿责任。\n\n第七条 房屋维修与养护\n1、甲方维修范围：房屋主体结构、墙体顶面自然开裂、水电主管道自然老化、设施自然损耗导致的故障（非人为使用问题）。\n2、乙方维修范围：家具家电、灯具、水龙头、马桶、地漏、门窗配件、室内管线等日常使用配件，因人为使用、操作不当、疏于养护造成的一切损坏、故障，均由乙方自费维修更换。\n3、房屋出现故障，乙方需第一时间告知甲方，不得私自拆机、改装，否则造成的损坏及安全隐患由乙方全权负责。因乙方拖延报修、隐瞒问题导致损失扩大的，全部责任由乙方承担。\n\n第八条 合同解除与终止\n1、乙方出现下列任意一种情形，均视为严重违约，甲方有权单方无条件解除合同、立即收回房屋、没收全部押金，乙方需结清所有欠费及违约金，剩余租金不予退还，若造成甲方损失，乙方另行全额赔偿：（1）逾期支付租金超过20日的；（2）拖欠各项杂费累计金额超500元或逾期超20日的；（3）擅自转租、分租、转借、转让房屋的；（4）擅自改造房屋结构、改动管线、破坏房屋原貌的；（5）利用房屋从事违法违规、扰民经营活动的；（6）故意损坏房屋及附属设施、拒不修复赔偿的；（7）居住人员混乱、产生严重邻里纠纷、被社区多次投诉拒不整改的；（8）未经甲方同意私自更换门锁、扣留房屋钥匙的。\n2、租赁期内，乙方不得单方提前退租。若乙方执意提前退租，视为根本违约，押金及剩余租金全部不予退还。\n3、因政府拆迁、征收、政策变动、房屋权属调整等不可抗力因素导致合同无法履行的，双方互不违约，甲方退还剩余租金及押金，无其他赔偿。\n\n第九条 违约责任\n1、乙方逾期搬离：合同到期或解除后，乙方拒不搬离、逾期滞留的，每逾期一日，需按日租金2倍支付占用费，同时承担期间产生的所有杂费及风险，甲方有权强制清退、收回房屋，遗留物品视为乙方自愿放弃，甲方可自行处置。\n2、乙方损坏房屋设施未赔偿、欠费未结清的，甲方有权永久扣留押金，同时保留追偿权利。\n3、因乙方违约导致甲方产生维权费用，包括但不限于律师费、诉讼费、保全费、差旅费、公告费、维修费、空置损失费，全部由乙方承担。\n\n第十条 其他免责与风险规避约定\n1、租赁期间，乙方自行保管个人财物，做好防火、防盗、防水、防漏电措施，所有人身、财产安全事故、邻里纠纷、行政处罚、民事赔偿，均由乙方独立承担，与甲方无关。\n2、乙方不得在房屋内堆放易燃易爆、有毒有害、违禁危险品，不得私拉乱接电线，违规使用大功率电器，否则一经发现立即解约，没收押金，造成事故损失的，乙方全额赔偿并承担法律责任。\n3、甲方有权在提前24小时告知乙方的前提下，入户查看房屋状况、检修设施，乙方不得拒绝、阻挠，无故阻挠视为违约。\n4、租赁期间产生的一切邻里矛盾、物业纠纷、扰民投诉，由乙方全权处理并承担责任，给甲方名誉、财产造成损失的，乙方需全额赔偿。\n\n第十一条 争议解决\n本合同履行过程中发生争议，双方优先协商解决；协商不成的，由房屋所在地人民法院管辖，甲方有权向当地法院提起诉讼维权。\n\n第十二条 附则\n1、本合同未尽事宜，双方可签订书面补充协议，补充协议与本合同具有同等法律效力，口头约定无效。\n2、本合同为线上签约，自乙方支付首期租金之日起生效。\n\n甲方（出租方）：' + r.property_name + '\n乙方（承租方）：' + S.tenant.name + '\n签署日期：2026-09-16';
+}
+function openContract(id){
+  var r = (SAND.rooms || []).filter(function(x){ return x.id === id; })[0];
+  if (!r) return;
+  S.contractAgree = false;
+  var now = new Date();
+  var start = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-01';
+  var d = new Date(now.getFullYear(), now.getMonth() + S_TERM, 1);
+  d.setDate(d.getDate() - 1);
+  var end = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  mask.innerHTML = '<div class="sheet" onclick="event.stopPropagation()">' +
+    '<div class="sh-head"><span class="sh-title">《房屋租赁合同》</span><span class="sh-close" onclick="closeMask()">×</span></div>' +
+    '<div class="contract-scroll" style="max-height:46vh;overflow-y:auto;background:#fafbfc;border-radius:11px;padding:14px;font-size:12.5px;line-height:1.9;white-space:pre-wrap">' + esc(renderContractText(r, start, end, S_TERM, S_PAY)) + '</div>' +
+    '<div class="agree-row" onclick="toggleAgree(this)"><span class="checkbox" id="ck-agree"></span><span style="font-size:12.5px">我已阅读并同意《房屋租赁合同》</span></div>' +
+    '<button class="btn grad" style="width:100%;padding:12px 0;border-radius:11px;font-size:14px;font-weight:600" onclick="submitSign(' + id + ')">立即签约</button></div>';
+  mask.classList.add('show');
+}
+function toggleAgree(el){
+  S.contractAgree = !S.contractAgree;
+  document.getElementById('ck-agree').className = 'checkbox' + (S.contractAgree ? ' on' : '');
+}
+function submitSign(id){
+  if (!S.contractAgree) { toast('请先勾选同意合同'); return; }
+  doSubmitSign(id);
+}
+function doSubmitSign(id){
+  var r = (SAND.rooms || []).filter(function(x){ return x.id === id; })[0];
+  if (!r) { toast('该房源已变化，请刷新后重试'); return; }
+  var endD = new Date(); endD.setMonth(endD.getMonth() + S_TERM);
+  var app = { room: r.property_name + ' · ' + r.room_no + '室', date: '2026-10-01', status: 'pending', rent: r.ref_rent, deposit: r.deposit || r.ref_rent, leaseEnd: fmtDate(endD) };
+  dmApi('/data', { method: 'PUT', body: { data: { applications: [app] } } }).then(function(res){
+    if (res.s !== 200) { toast('提交失败'); return; }
+    closeMask();
+    toast('签约申请已提交（已写入沙箱，后台「签约申请」同步可见）');
+    sandboxReload(function(){ go('home-tenant'); });
+  });
+}
+
+/* ============ 渲染入口 ============ */
+function renderContent(){
+  switch (S.view) {
+    case 'home-guest': viewHome(true); break;
+    case 'home-tenant': viewHome(false); break;
+    case 'login': viewLogin(); break;
+    case 'adm-login': viewAdmLogin(); break;
+    case 'guest-bill': content.innerHTML = '<div class="empty">未登录，暂无账单；登录后在此查看缴款明细</div>'; break;
+    case 'bill': viewBill(); break;
+    case 'billDetail': viewBillDetail(); break;
+    case 'profile': viewProfile(); break;
+    case 'adm-rooms': viewAdmRooms(); break;
+    case 'adm-bills': viewAdmBills(); break;
+    case 'adm-stats': viewAdmStats(); break;
+  }
+}
+if (!localStorage.getItem(TOKEN_KEY)) {
+  content.innerHTML = '<div class="card" style="padding:30px 16px;text-align:center"><div style="font-size:14px;color:var(--ink);margin-bottom:10px">请先登录测试中心</div><button class="btn grad" style="width:100%;padding:12px 0" onclick="location.href='demo-hub.html'">前往测试中心</button></div>';
+} else {
+  sandboxReload(function(){ go('home-guest'); });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+# 依赖与构建产物
+node_modules/
+web/node_modules/
+server/node_modules/
+web/dist/
+
+# 运行时数据（敏感，不入库）
+data/
+data-t-*/
+data-test-*/
+*.db
+*.db-wal
+*.db-shm
+
+# 发布产物
+lookhome-release/
+lookhome-release.tar.gz
+
+# 小程序与敏感凭据（不在本仓库）
+miniprogram/
+miniprogram-preview/
+miniprogram-lukejia.zip
+certs/
+*.key
+demo-subscribe.html
+
+# 内部测试脚本（可能含部署凭据）
+test/
+
+# 截图与日志
+_shots/
+.DS_Store
+Thumbs.db
+*.log

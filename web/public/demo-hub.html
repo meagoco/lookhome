@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LookHome · 测试体验中心</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;min-height:100vh;background:linear-gradient(135deg,#eef4ff 0%,#e9f9fe 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+.box{width:100%;max-width:520px;background:#fff;border-radius:20px;padding:32px 30px;box-shadow:0 20px 60px rgba(27,42,74,.14);border:1px solid #e8edf4}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.brand img{height:42px;width:auto}
+.brand h1{font-size:22px;color:#1b2a4a;font-weight:700;letter-spacing:.5px}
+.sub{color:#8a97ad;font-size:13px;line-height:1.7;margin:10px 0 20px}
+label{display:block;font-size:12.5px;color:#8a97ad;margin:12px 0 6px}
+input{width:100%;border:1px solid #e8edf4;border-radius:10px;padding:11px 13px;font-size:14px;outline:none;color:#1b2a4a;background:#f8fafc}
+input:focus{border-color:#1fa2ff}
+.btn{display:block;width:100%;border:none;border-radius:12px;padding:12px 0;font-size:15px;font-weight:600;cursor:pointer;margin-top:18px;color:#fff;background:linear-gradient(90deg,#1fa2ff,#12d8fa);box-shadow:0 4px 14px rgba(31,162,255,.35)}
+.btn:active{opacity:.85}
+.cards{display:none;margin-top:22px;gap:12px;flex-direction:column}
+.cards .c{display:flex;align-items:center;gap:14px;border:1px solid #e8edf4;border-radius:14px;padding:16px;cursor:pointer;text-decoration:none;transition:.15s;background:#fff}
+.cards .c:hover{border-color:#1fa2ff;box-shadow:0 6px 18px rgba(31,162,255,.12)}
+.cards .c .ic{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;flex-shrink:0}
+.cards .c .ic.a{background:linear-gradient(135deg,#1fa2ff,#12d8fa)}
+.cards .c .ic.b{background:linear-gradient(135deg,#2f80ed,#12d8fa)}
+.ic.c{background:linear-gradient(135deg,#6c5ce7,#12d8fa)}
+.cards .c .t{font-size:15px;font-weight:600;color:#1b2a4a}
+.cards .c .d{font-size:12px;color:#8a97ad;margin-top:3px}
+.err{color:#e5484d;font-size:12.5px;margin-top:10px;display:none}
+.tip{font-size:11.5px;color:#9aa3b2;background:#f4f7fb;border:1px solid #e8edf4;border-radius:10px;padding:10px 12px;margin-top:16px;line-height:1.8}
+.tip b{color:#1b2a4a}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.logout{font-size:12px;color:#1fa2ff;cursor:pointer;text-decoration:none;display:none}
+.home{font-size:12px;color:#1fa2ff;cursor:pointer;text-decoration:none;padding:5px 12px;border:1px solid #1fa2ff;border-radius:999px;font-weight:600;transition:.15s;white-space:nowrap}
+.home:hover{background:#1fa2ff;color:#fff}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="brand"><img src="/lookhome-icon.png" alt="LookHome"><div style="flex:1"><h1>LookHome LOOKHOME</h1><div style="color:#8a97ad;font-size:12px;margin-top:2px">测试体验中心</div></div><a class="home" href="/">返回首页</a></div>
+  <div class="sub">测试后台与租客小程序<strong>数据联动</strong>：在后台改房源/审核签约，小程序实时可见；在小程序提交签约/缴费，后台同步显示。仅作展示，不产生实际数据。</div>
+  <div id="loginView">
+    <label>管理员账号</label><input id="user" value="admin">
+    <label>管理员密码</label><input id="pass" type="password" value="admin123" placeholder="默认 admin123">
+    <div class="err" id="err"></div>
+    <button class="btn" id="loginBtn">进入测试</button>
+    <div class="tip">📌 数据按 <b>来源 IP</b> 隔离：换网络或 IP 后自动恢复默认数值；IP 不变则保留你改动过的数据。<br>默认账号 <b>admin / admin123</b>（测试环境专用）。</div>
+  </div>
+  <div class="cards" id="cards">
+    <a class="c" href="/dashboard">
+      <div class="ic a">🏢</div><div><div class="t">管理后台演示</div><div class="d">完整管理后台界面：房源、租客、合同、签约申请、账单——数据全部为演示沙箱</div></div>
+    </a>
+    <a class="c" href="demo-mini-admin.html">
+      <div class="ic c">🧭</div><div><div class="t">小程序管理员演示</div><div class="d">完整还原源码：登录分流、管理员登录、房源签约/本月账单/收入统计三视图</div></div>
+    </a>
+    <a class="logout" id="logout" href="javascript:void(0)">退出测试</a>
+  </div>
+</div>
+<script>
+(function(){
+  var TOKEN_KEY = 'lk_demo_token';
+  function api(path, opts){
+    opts = opts || {};
+    var h = { 'Content-Type': 'application/json' };
+    var t = localStorage.getItem(TOKEN_KEY);
+    if (t) h['Authorization'] = 'Bearer ' + t;
+    return fetch('/api/demo' + path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined })
+      .then(function(r){ return r.json().then(function(d){ return { s: r.status, d: d }; }); });
+  }
+  document.getElementById('loginBtn').addEventListener('click', function(){
+    var u = document.getElementById('user').value, p = document.getElementById('pass').value;
+    api('/login', { method: 'POST', body: { username: u, password: p } }).then(function(res){
+      if (res.s === 200) {
+        localStorage.setItem(TOKEN_KEY, res.d.token);
+        // 演示模式：不覆盖正式登录态（lk_token/lk_role 保留），api.js 在演示模式下自动路由到沙箱
+        localStorage.setItem('lk_demo_mode', '1');
+        showCards();
+      } else {
+        document.getElementById('err').textContent = res.d.error || '登录失败';
+        document.getElementById('err').style.display = 'block';
+      }
+    });
+  });
+  document.getElementById('logout').addEventListener('click', function(){
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('lk_demo_mode');
+    location.reload();
+  });
+  function showCards(){
+    document.getElementById('loginView').style.display = 'none';
+    document.getElementById('cards').style.display = 'flex';
+    document.getElementById('logout').style.display = 'block';
+  }
+  var t = localStorage.getItem(TOKEN_KEY);
+  if (t) api('/data').then(function(res){ if (res.s === 200) { localStorage.setItem('lk_demo_mode', '1'); showCards(); } else { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem('lk_demo_mode'); } });
+})();
+</script>
+</body>
+</html>
